@@ -224,8 +224,12 @@ textarea { min-height: 110px; font-size: .8rem; line-height: 1.5; }
 /* ---- word list ---- */
 .word-row {
   display: flex; align-items: baseline; gap: 11px;
-  padding: 9px 2px; border-bottom: 1px solid var(--rule);
+  padding: 10px 2px; border-bottom: 1px solid var(--rule);
+  width: 100%; background: none; border-top: none; border-left: none;
+  border-right: none; color: inherit; font: inherit; text-align: left;
+  cursor: pointer;
 }
+.word-row:hover { color: var(--lapis); }
 .word-row .g { font-family: var(--f-greek); font-size: 1.1rem; }
 .word-row .e {
   color: var(--muted); font-size: .78rem; text-align: right; flex: 1;
@@ -264,6 +268,23 @@ select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ---- memory hints ---- */
+.hint-zone { margin: 10px 0 0; }
+.hint-toggle { text-align: center; }
+.hint-body {
+  margin-top: 10px; padding: 14px;
+  background: var(--surface); border: 1px solid var(--rule);
+  border-left: 3px solid var(--rubric); border-radius: var(--r);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.hint-img {
+  display: block; max-width: 100%; max-height: 46vh;
+  width: auto; height: auto; border-radius: var(--r);
+}
+.hint-note { font-family: var(--f-disp); font-size: 1.05rem; line-height: 1.45; text-align: center; }
+.hint-mark { color: var(--rubric); font-size: .7rem; flex: none; }
+#hint-preview:not(:empty) { margin-bottom: 10px; }
 </style>
 
 <header id="topbar">
@@ -393,6 +414,118 @@ let customSets = store.load(LS_CUSTOM, []);
 
 function saveProgress() { store.save(LS_PROGRESS, progress); }
 function saveSettings() { store.save(LS_SETTINGS, settings); }
+
+// ---------------- hints (picture + note per word) ----------------
+// Photos are far too large for localStorage, so hints live in IndexedDB.
+// Everything is mirrored into `hints` at boot so rendering stays synchronous.
+const HINT_DB = "gv-hints-v1", HINT_STORE = "hints";
+let hints = {};            // wordId -> { blob?: Blob, note?: string }
+const hintUrls = {};       // wordId -> object URL, made on first use
+
+function openHintDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(HINT_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(HINT_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function hintTx(mode, fn) {
+  return openHintDb().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(HINT_STORE, mode);
+    const req = fn(tx.objectStore(HINT_STORE));
+    tx.oncomplete = () => resolve(req && req.result);
+    tx.onerror = () => reject(tx.error);
+  }));
+}
+
+async function loadHints() {
+  try {
+    const db = await openHintDb();
+    hints = await new Promise((resolve, reject) => {
+      const tx = db.transaction(HINT_STORE, "readonly");
+      const st = tx.objectStore(HINT_STORE);
+      const keys = st.getAllKeys(), vals = st.getAll();
+      tx.oncomplete = () => {
+        const out = {};
+        keys.result.forEach((k, i) => { out[k] = vals.result[i]; });
+        resolve(out);
+      };
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    hints = {}; // private browsing or no IndexedDB — hints just stay unavailable
+  }
+}
+
+async function putHint(id, val) {
+  hints[id] = val;
+  if (hintUrls[id]) { URL.revokeObjectURL(hintUrls[id]); delete hintUrls[id]; }
+  await hintTx("readwrite", st => st.put(val, id));
+}
+
+async function removeHint(id) {
+  delete hints[id];
+  if (hintUrls[id]) { URL.revokeObjectURL(hintUrls[id]); delete hintUrls[id]; }
+  await hintTx("readwrite", st => st.delete(id));
+}
+
+function hasHint(id) {
+  const h = hints[id];
+  return !!(h && (h.blob || h.note));
+}
+
+function hintUrl(id) {
+  const h = hints[id];
+  if (!h || !h.blob) return null;
+  if (!hintUrls[id]) hintUrls[id] = URL.createObjectURL(h.blob);
+  return hintUrls[id];
+}
+
+// Photos straight from a phone camera are many megabytes; store a small copy.
+function shrinkImage(file, max = 900) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const src = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.width * scale));
+      c.height = Math.max(1, Math.round(img.height * scale));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(src);
+      c.toBlob(b => b ? resolve(b) : reject(new Error("that image could not be read")), "image/jpeg", 0.82);
+    };
+    img.onerror = () => { URL.revokeObjectURL(src); reject(new Error("that image could not be read")); };
+    img.src = src;
+  });
+}
+
+// Shared hint strip for the study screens: a button that reveals the picture.
+function hintMarkup(w) {
+  if (!hasHint(w.id)) return "";
+  return `<div class="hint-zone">
+      <button class="btn secondary hint-toggle" id="hint-btn">Show hint</button>
+      <div class="hint-body" id="hint-body" hidden></div>
+    </div>`;
+}
+
+function mountHint(w) {
+  const btn = view.querySelector("#hint-btn");
+  if (!btn) return;
+  const body = view.querySelector("#hint-body");
+  btn.onclick = () => {
+    const showing = !body.hidden;
+    if (showing) { body.hidden = true; body.innerHTML = ""; btn.textContent = "Show hint"; return; }
+    const h = hints[w.id] || {};
+    const url = hintUrl(w.id);
+    body.innerHTML = `${url ? `<img class="hint-img" alt="Memory hint for ${esc(w.g)}" src="${url}">` : ""}
+      ${h.note ? `<p class="hint-note">${esc(h.note)}</p>` : ""}`;
+    body.hidden = false;
+    btn.textContent = "Hide hint";
+  };
+}
 
 // ---------------- data ----------------
 function allSets() { return [...VOCAB_SETS, ...customSets]; }
@@ -582,6 +715,7 @@ function renderReview() {
         <div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div>
       </div>
     </div></div>
+    ${hintMarkup(w)}
     <div class="grade-row" id="grades" style="visibility:hidden">
       <button class="btn g-again">Again</button>
       <button class="btn g-hard">Hard</button>
@@ -589,6 +723,7 @@ function renderReview() {
       <button class="btn g-easy">Easy</button>
     </div>`;
 
+  mountHint(w);
   const fc = view.querySelector("#fc");
   fc.onclick = () => {
     fc.classList.toggle("flipped");
@@ -635,12 +770,14 @@ function renderFlash() {
       <div class="fc-face"><span class="tier-badge ${w.tier}">${w.tier}</span>${front}<div class="fc-meta">tap to flip</div></div>
       <div class="fc-face fc-back">${back}${front}<div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div></div>
     </div></div>
+    ${hintMarkup(w)}
     <div class="grade-row">
       <button class="btn secondary" id="prev">← Prev</button>
       <button class="btn secondary" id="shuf">Shuffle</button>
       <button class="btn" id="next">Next →</button>
     </div>`;
 
+  mountHint(w);
   view.querySelector("#fc").onclick = e => e.currentTarget.classList.toggle("flipped");
   view.querySelector("#next").onclick = () => { deckPos++; renderFlash(); };
   view.querySelector("#prev").onclick = () => { deckPos = (deckPos - 1 + deck.length) % deck.length; renderFlash(); };
@@ -703,7 +840,9 @@ function renderQuiz() {
     view.innerHTML = `
       <div class="muted">Question ${quiz.pos + 1} / ${quiz.items.length} · ${quiz.right} correct</div>
       <div class="card-panel" style="text-align:center">${prompt}</div>
+      ${hintMarkup(w)}
       ${choices.map(c => `<button class="choice ${dir === "g2e" ? "" : "greek"}" data-v="${esc(c)}">${esc(c)}</button>`).join("")}`;
+    mountHint(w);
     view.querySelectorAll(".choice").forEach(btn => btn.onclick = () => {
       const ok = btn.dataset.v === w[key];
       view.querySelectorAll(".choice").forEach(b => {
@@ -726,7 +865,9 @@ function renderQuiz() {
         <input type="text" id="ans" autocomplete="off" autocapitalize="off" class="${dir === "e2g" ? "greek" : ""}">
         <button class="btn" id="check">Check</button>
         <div id="fb"></div>
-      </div>`;
+      </div>
+      ${hintMarkup(w)}`;
+    mountHint(w);
     const input = view.querySelector("#ans");
     input.focus();
     const check = () => {
@@ -759,6 +900,7 @@ function renderBrowse() {
   const words = activeWords();
   view.innerHTML = `
     <input type="text" id="search" placeholder="Search Greek or English… (accents optional)">
+    <p class="muted" style="margin-top:8px">Tap any word to add a picture or note you\u2019ll see as a hint while studying.</p>
     <div class="pill-row" id="tierf">
       <button class="pill on" data-f="all">All</button>
       <button class="pill" data-f="memorize">Memorize</button>
@@ -779,11 +921,16 @@ function renderBrowse() {
     });
     view.querySelector("#list").innerHTML =
       `<p class="muted" style="margin:8px 0">${rows.length} words</p>` +
-      rows.map(w => `<div class="word-row">
+      rows.map(w => `<button class="word-row" data-id="${esc(w.id)}">
         <span class="dot ${wordStatus(w.id)}"></span>
         <span class="g greek">${esc(w.g)}</span>
         <span class="e">${esc(w.gloss)} <span style="opacity:.6">(${w.freq ?? "?"})</span></span>
-      </div>`).join("");
+        <span class="hint-mark">${hasHint(w.id) ? "\u25c9" : ""}</span>
+      </button>`).join("");
+    view.querySelectorAll(".word-row").forEach(row => row.onclick = () => {
+      const w = words.find(x => x.id === row.dataset.id);
+      if (w) openWordEditor(w);
+    });
   };
   view.querySelector("#search").oninput = draw;
   view.querySelectorAll("#tierf .pill").forEach(p => p.onclick = () => {
@@ -791,6 +938,75 @@ function renderBrowse() {
     p.classList.add("on"); filter = p.dataset.f; draw();
   });
   draw();
+}
+
+// ---------------- WORD EDITOR (attach a hint) ----------------
+function openWordEditor(w) {
+  const h = hints[w.id] || {};
+  const url = hintUrl(w.id);
+  view.innerHTML = `
+    <button class="btn secondary" id="back">\u2190 Back to word list</button>
+    <div class="card-panel" style="text-align:center;margin-top:14px">
+      <span class="tier-badge ${w.tier}">${w.tier}</span>
+      <div class="fc-word greek" style="margin:10px 0">${esc(w.g)}</div>
+      <div class="fc-gloss">${esc(w.gloss)}</div>
+      <div class="fc-meta" style="margin-top:8px">${esc(w.setTitle)} \u00b7 NT freq ${w.freq ?? "?"}</div>
+    </div>
+    <div class="card-panel">
+      <h2>Memory hint</h2>
+      <p class="muted">A picture or a phrase that helps the word stick. It stays hidden while you study until you tap \u201cShow hint\u201d.</p>
+      <div id="hint-preview">${url ? `<img class="hint-img" alt="Current hint for ${esc(w.g)}" src="${url}">` : ""}</div>
+      <input type="file" id="pic" accept="image/*" hidden>
+      <button class="btn secondary" id="pick">${url ? "Replace picture" : "Add a picture"}</button>
+      <input type="text" id="note" placeholder="Note or mnemonic (optional)" value="${esc(h.note || "")}">
+      <button class="btn" id="save">Save hint</button>
+      ${hasHint(w.id) ? `<button class="btn secondary" id="clear" style="color:var(--bad)">Remove hint</button>` : ""}
+      <div id="hint-fb"></div>
+    </div>`;
+
+  let pendingBlob = null;
+  const fb = view.querySelector("#hint-fb");
+  const fileInput = view.querySelector("#pic");
+
+  view.querySelector("#back").onclick = () => show("browse");
+  view.querySelector("#pick").onclick = () => fileInput.click();
+
+  fileInput.onchange = async () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    fb.innerHTML = `<p class="muted" style="margin-top:10px">Preparing picture\u2026</p>`;
+    try {
+      pendingBlob = await shrinkImage(f);
+      const preview = URL.createObjectURL(pendingBlob);
+      view.querySelector("#hint-preview").innerHTML =
+        `<img class="hint-img" alt="Picture you just chose" src="${preview}">`;
+      view.querySelector("#pick").textContent = "Replace picture";
+      fb.innerHTML = `<div class="feedback ok">Picture ready \u2014 press Save hint to keep it.</div>`;
+    } catch (e) {
+      fb.innerHTML = `<div class="feedback no">${esc(e.message)}</div>`;
+    }
+  };
+
+  view.querySelector("#save").onclick = async () => {
+    const note = view.querySelector("#note").value.trim();
+    const blob = pendingBlob || (hints[w.id] && hints[w.id].blob) || null;
+    if (!blob && !note) {
+      fb.innerHTML = `<div class="feedback no">Add a picture or a note first.</div>`;
+      return;
+    }
+    try {
+      await putHint(w.id, { blob, note });
+      fb.innerHTML = `<div class="feedback ok">Hint saved.</div>`;
+    } catch {
+      fb.innerHTML = `<div class="feedback no">Could not save \u2014 this device may be out of storage.</div>`;
+    }
+  };
+
+  const clearBtn = view.querySelector("#clear");
+  if (clearBtn) clearBtn.onclick = async () => {
+    await removeHint(w.id);
+    openWordEditor(w);
+  };
 }
 
 // ---------------- SETTINGS ----------------
@@ -831,6 +1047,7 @@ function renderSettings() {
       <button class="btn small secondary" id="import-paste">Import backup from pasted text</button>
       <div id="backup-out"></div>
       <button class="btn small secondary" id="reset" style="color:var(--bad)">Reset all progress</button>
+      <p class="muted" style="margin-top:10px">Backups carry your progress, settings and custom sets. Hint pictures stay on this device \u2014 they are too large for a pasted backup, so add them again if you move to a new phone.</p>
     </div>`;
 
   view.querySelectorAll("#dir .pill").forEach(p => p.onclick = () => {
@@ -908,5 +1125,5 @@ function renderSettings() {
 }
 
 // ---------------- boot ----------------
-show("home");
+loadHints().then(() => show("home"));
 </script>

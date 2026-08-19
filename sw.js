@@ -1,5 +1,5 @@
 // Service worker — offline-first caching so the app works standalone.
-const CACHE = "greek-vocab-v1";
+const CACHE = "greek-vocab-v2";
 const ASSETS = [
   "./",
   "./index.html",

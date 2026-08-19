@@ -134,6 +134,9 @@ input[type="text"], select {
 .word-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 10px 4px; border-bottom: 1px solid #232e4d; gap: 10px;
+  width: 100%; background: none; border-top: none; border-left: none;
+  border-right: none; color: inherit; font: inherit; text-align: left;
+  cursor: pointer;
 }
 .word-row .g { font-size: 1.1rem; }
 .word-row .e { color: var(--muted); font-size: .85rem; text-align: right; flex: 1; }
@@ -154,3 +157,19 @@ input[type="text"], select {
 
 label.row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; font-size: .95rem; }
 textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: var(--text); border: 1px solid #2b3757; border-radius: 10px; padding: 10px; font-size: .85rem; margin-top: 8px; }
+
+/* ---- memory hints ---- */
+.hint-zone { margin: 10px 0 0; }
+.hint-toggle { text-align: center; }
+.hint-body {
+  margin-top: 10px; padding: 12px;
+  background: var(--panel-2); border-radius: var(--radius);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.hint-img {
+  display: block; max-width: 100%; max-height: 46vh;
+  width: auto; height: auto; border-radius: 10px;
+}
+.hint-note { font-size: 1rem; line-height: 1.45; text-align: center; }
+.hint-mark { color: var(--accent-2); font-size: .8rem; flex: none; }
+#hint-preview:not(:empty) { margin-bottom: 10px; }
