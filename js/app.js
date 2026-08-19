@@ -19,35 +19,129 @@ let settings = store.load(LS_SETTINGS, {
   direction: "g2e",          // g2e | e2g | mixed
   tiers: { memorize: true, recognize: true },
   enabledSets: {},           // setId -> bool (default true)
-  quizSize: 10
+  quizSize: 10,
+  pron: "erasmian"           // erasmian | modern
 });
 let customSets = store.load(LS_CUSTOM, []);
 
 function saveProgress() { store.save(LS_PROGRESS, progress); }
 function saveSettings() { store.save(LS_SETTINGS, settings); }
 
+// ---------------- pronunciation ----------------
+// Text-to-speech voices cannot read polytonic Greek, and none of them speak
+// Erasmian at all. So instead of handing the voice Greek letters, we hand it a
+// respelling in the voice's own alphabet that it pronounces close to correctly.
+
+// Split a word into letters carrying their own diacritics.
+function greekLetters(word) {
+  const out = [];
+  for (const ch of word.normalize("NFD")) {
+    const code = ch.codePointAt(0);
+    if (code >= 0x0300 && code <= 0x036f) {          // a combining mark
+      if (out.length) out[out.length - 1].marks.push(code);
+    } else {
+      out.push({ base: ch.toLowerCase(), marks: [] });
+    }
+  }
+  return out;
+}
+
+const ROUGH = 0x0314;     // ῾ rough breathing — adds an h
+const DIAERESIS = 0x0308; // ¨ marks the vowel as its OWN syllable, not a diphthong
+const VOWELS = "αεηιουω";
+
+const ERASMIAN = {
+  single: { α:"ah", ε:"eh", η:"ay", ι:"ee", ο:"o", υ:"ew", ω:"oh",
+            β:"b", γ:"g", δ:"d", ζ:"z", θ:"th", κ:"k", λ:"l", μ:"m", ν:"n",
+            ξ:"x", π:"p", ρ:"r", σ:"s", ς:"s", τ:"t", φ:"f", χ:"k", ψ:"ps" },
+  digraph: { αι:"eye", ει:"ay", οι:"oy", υι:"wee", αυ:"ow", ευ:"eh-oo", ηυ:"ay-oo", ου:"oo" }
+};
+
+const MODERN = {
+  single: { α:"ah", ε:"eh", η:"ee", ι:"ee", ο:"o", υ:"ee", ω:"o",
+            β:"v", γ:"gh", δ:"th", ζ:"z", θ:"th", κ:"k", λ:"l", μ:"m", ν:"n",
+            ξ:"x", π:"p", ρ:"r", σ:"s", ς:"s", τ:"t", φ:"f", χ:"h", ψ:"ps" },
+  digraph: { αι:"eh", ει:"ee", οι:"ee", υι:"ee", αυ:"av", ευ:"ev", ηυ:"ev", ου:"oo" }
+};
+
+// Two chunks that would collide into an unreadable run ("eh-oo"+"o" = "ehooo",
+// "h"+"hree") get a separator so the voice keeps them apart.
+function join(out, chunk) {
+  const a = out[out.length - 1], b = chunk[0];
+  if (!a) return chunk;
+  // Same letter twice, or a vowel right after the h of "ah"/"eh"/"oh" — which
+  // the voice would otherwise read as an intrusive h ("ah"+"ee" = "a-hee").
+  // ...but only when that h ends a vowel sound ("ah"), never a consonant
+  // digraph like "th" or "gh", where "thay" is exactly what we want.
+  const vowelH = a === "h" && "aeiou".includes(out[out.length - 2] || "");
+  if ((a === b && a !== "-") || (vowelH && "aeiou".includes(b))) return out + "-" + chunk;
+  return out + chunk;
+}
+
+function translit(word, scheme) {
+  const map = scheme === "modern" ? MODERN : ERASMIAN;
+  const L = greekLetters(word);
+  let out = "", i = 0;
+
+  while (i < L.length) {
+    const cur = L[i], next = L[i + 1];
+
+    // γ before a velar is a nasal: ἄγγελος = ang-, not ag-g-
+    if (cur.base === "γ" && next && "γκχξ".includes(next.base)) {
+      out += "ng";
+      i++;
+      continue;
+    }
+
+    // Diphthongs: the breathing sits on the second vowel.
+    if (next && VOWELS.includes(cur.base)) {
+      const pair = cur.base + next.base;
+      if (map.digraph[pair] && !next.marks.includes(DIAERESIS)) {
+        const h = next.marks.includes(ROUGH) ? "h" : "";
+        out += h + map.digraph[pair];
+        i += 2;
+        continue;
+      }
+    }
+
+    const h = cur.marks.includes(ROUGH) ? "h" : "";
+    const sound = map.single[cur.base] ?? cur.base;
+    // ῥ is "rh"; every other letter takes its h in front.
+    out = join(out, cur.base === "ρ" ? sound + h : h + sound);
+    i++;
+  }
+  return out.replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
+
 // ---------------- speech (hear the Greek) ----------------
-// Uses the device's own voices, so it works offline and costs nothing.
-// A Greek voice gives modern Greek pronunciation; without one installed the
-// browser falls back to its default voice reading the Greek letters.
 const SPEAKER_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.4 8.6a5 5 0 0 1 0 6.8"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>`;
 
 function speechReady() { return typeof speechSynthesis !== "undefined"; }
 
 function greekVoice() {
   if (!speechReady()) return null;
-  const voices = speechSynthesis.getVoices() || [];
-  return voices.find(v => /^el/i.test(v.lang)) || null;
+  return (speechSynthesis.getVoices() || []).find(v => /^el/i.test(v.lang)) || null;
 }
 
-function speakGreek(text) {
-  if (!speechReady() || !text) return;
+// What the voice is actually given depends on the scheme:
+//   erasmian — always a respelling, since no voice on earth speaks Erasmian
+//   modern   — real Greek if a Greek voice exists, else a respelling
+function speechPlan(greek) {
+  const scheme = settings.pron || "erasmian";
+  const gv = scheme === "modern" ? greekVoice() : null;
+  return gv
+    ? { text: greek, voice: gv, lang: gv.lang }
+    : { text: translit(greek, scheme), voice: null, lang: navigator.language || "en-US" };
+}
+
+function speakGreek(greek) {
+  if (!speechReady() || !greek) return;
   speechSynthesis.cancel();          // stop whatever is still playing
-  const u = new SpeechSynthesisUtterance(text);
-  const v = greekVoice();
-  if (v) u.voice = v;
-  u.lang = v ? v.lang : "el-GR";
-  u.rate = 0.8;                      // slow enough to follow syllable by syllable
+  const plan = speechPlan(greek);
+  const u = new SpeechSynthesisUtterance(plan.text);
+  if (plan.voice) u.voice = plan.voice;
+  u.lang = plan.lang;
+  u.rate = 0.75;                     // slow enough to follow syllable by syllable
   speechSynthesis.speak(u);
 }
 
@@ -694,7 +788,13 @@ function renderSettings() {
     </div>
     <div class="card-panel">
       <h2>Pronunciation</h2>
+      <div class="pill-row" id="pron">
+        <button class="pill ${(settings.pron || "erasmian") === "erasmian" ? "on" : ""}" data-p="erasmian">Erasmian</button>
+        <button class="pill ${settings.pron === "modern" ? "on" : ""}" data-p="modern">Modern Greek</button>
+      </div>
       <p class="muted" id="voice-note"></p>
+      <p class="muted" style="margin-top:8px">Sample: <span class="greek">ἀπαγγέλλω</span> \u2192 <span id="pron-sample"></span></p>
+      <button class="btn small secondary" id="pron-try">Hear the sample</button>
     </div>
     <div class="card-panel">
       <h2>Word Tiers</h2>
@@ -719,14 +819,28 @@ function renderSettings() {
     </div>`;
 
   const voiceNote = view.querySelector("#voice-note");
-  if (!speechReady()) {
-    voiceNote.textContent = "This browser has no speech support, so the speaker buttons are hidden.";
-  } else {
-    const v = greekVoice();
-    voiceNote.textContent = v
-      ? `Using the Greek voice \u201c${v.name}\u201d \u2014 modern Greek pronunciation, not the Erasmian your class may use.`
-      : "No Greek voice is installed, so your device reads the Greek with its default voice. Adding a Greek language voice in your system settings makes it much more accurate.";
-  }
+  const sampleEl = view.querySelector("#pron-sample");
+  const describe = () => {
+    if (!speechReady()) {
+      voiceNote.textContent = "This browser has no speech support, so the speaker buttons are hidden.";
+      sampleEl.textContent = "\u2014";
+      return;
+    }
+    const plan = speechPlan("\u1F00\u03C0\u03B1\u03B3\u03B3\u03AD\u03BB\u03BB\u03C9");
+    sampleEl.textContent = plan.text;
+    voiceNote.textContent = plan.voice
+      ? `Read as real Greek by the voice \u201c${plan.voice.name}\u201d.`
+      : "Your device has no Greek voice, so each word is respelled phonetically and read by your normal voice. That is also the only way to get Erasmian, which no voice supports.";
+  };
+  describe();
+
+  view.querySelectorAll("#pron .pill").forEach(p => p.onclick = () => {
+    settings.pron = p.dataset.p;
+    saveSettings();
+    renderSettings();
+  });
+  view.querySelector("#pron-try").onclick = () =>
+    speakGreek("\u1F00\u03C0\u03B1\u03B3\u03B3\u03AD\u03BB\u03BB\u03C9");
 
   view.querySelectorAll("#dir .pill").forEach(p => p.onclick = () => {
     settings.direction = p.dataset.d; saveSettings(); renderSettings();
