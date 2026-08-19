@@ -1,0 +1,16 @@
+{
+  "name": "Greek Vocab — Flashcards & Quizzes",
+  "short_name": "Greek Vocab",
+  "description": "Biblical Greek vocabulary flashcards with spaced repetition, from Going Deeper with New Testament Greek.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10162a",
+  "theme_color": "#1a2238",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
