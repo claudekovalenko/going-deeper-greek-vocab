@@ -173,3 +173,21 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
 .hint-note { font-size: 1rem; line-height: 1.45; text-align: center; }
 .hint-mark { color: var(--accent-2); font-size: .8rem; flex: none; }
 #hint-preview:not(:empty) { margin-bottom: 10px; }
+
+/* ---- hear it ---- */
+.speak-btn {
+  position: absolute; right: 12px; bottom: 12px;
+  width: 42px; height: 42px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--panel-2); color: var(--accent-2);
+  border: 1px solid #2b3757; border-radius: 50%;
+  cursor: pointer; z-index: 2;
+}
+.speak-btn:active { transform: scale(.92); }
+.speak-inline { display: flex; justify-content: center; margin-top: 4px; }
+.speak-inline .speak-btn { position: static; }
+.speak-btn.speak-sm {
+  position: static; width: 30px; height: 30px;
+  vertical-align: middle; margin-left: 6px;
+}
+.speak-btn.speak-sm svg { width: 15px; height: 15px; }

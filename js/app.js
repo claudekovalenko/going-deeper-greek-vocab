@@ -26,6 +26,49 @@ let customSets = store.load(LS_CUSTOM, []);
 function saveProgress() { store.save(LS_PROGRESS, progress); }
 function saveSettings() { store.save(LS_SETTINGS, settings); }
 
+// ---------------- speech (hear the Greek) ----------------
+// Uses the device's own voices, so it works offline and costs nothing.
+// A Greek voice gives modern Greek pronunciation; without one installed the
+// browser falls back to its default voice reading the Greek letters.
+const SPEAKER_ICON = `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.4 8.6a5 5 0 0 1 0 6.8"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>`;
+
+function speechReady() { return typeof speechSynthesis !== "undefined"; }
+
+function greekVoice() {
+  if (!speechReady()) return null;
+  const voices = speechSynthesis.getVoices() || [];
+  return voices.find(v => /^el/i.test(v.lang)) || null;
+}
+
+function speakGreek(text) {
+  if (!speechReady() || !text) return;
+  speechSynthesis.cancel();          // stop whatever is still playing
+  const u = new SpeechSynthesisUtterance(text);
+  const v = greekVoice();
+  if (v) u.voice = v;
+  u.lang = v ? v.lang : "el-GR";
+  u.rate = 0.8;                      // slow enough to follow syllable by syllable
+  speechSynthesis.speak(u);
+}
+
+// The lexical entry carries parsing info ("θρίξ, τριχός, ἡ"); say the word itself.
+function speakMarkup(w, extraClass = "") {
+  if (!speechReady()) return "";
+  const say = headword(w.g);
+  return `<button class="speak-btn ${extraClass}" data-say="${esc(say)}"
+      aria-label="Hear ${esc(say)} pronounced" title="Hear it">${SPEAKER_ICON}</button>`;
+}
+
+function mountSpeak() {
+  view.querySelectorAll(".speak-btn").forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();           // never flip the card when tapping the speaker
+      e.preventDefault();
+      speakGreek(btn.dataset.say);
+    };
+  });
+}
+
 // ---------------- hints (picture + note per word) ----------------
 // Photos are far too large for localStorage, so hints live in IndexedDB.
 // Everything is mirrored into `hints` at boot so rendering stays synchronous.
@@ -320,10 +363,12 @@ function renderReview() {
       <div class="fc-face">
         <span class="tier-badge ${w.tier}">${w.tier}</span>${front}
         <div class="fc-meta">tap to reveal</div>
+        ${dir === "g2e" ? speakMarkup(w) : ""}
       </div>
       <div class="fc-face fc-back">
         ${back}${front}
         <div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div>
+        ${speakMarkup(w)}
       </div>
     </div></div>
     ${hintMarkup(w)}
@@ -335,6 +380,7 @@ function renderReview() {
     </div>`;
 
   mountHint(w);
+  mountSpeak();
   const fc = view.querySelector("#fc");
   fc.onclick = () => {
     fc.classList.toggle("flipped");
@@ -378,8 +424,8 @@ function renderFlash() {
   view.innerHTML = `
     <div class="muted">Card ${deckPos % deck.length + 1} / ${deck.length}</div>
     <div class="flashcard-wrap"><div class="flashcard" id="fc">
-      <div class="fc-face"><span class="tier-badge ${w.tier}">${w.tier}</span>${front}<div class="fc-meta">tap to flip</div></div>
-      <div class="fc-face fc-back">${back}${front}<div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div></div>
+      <div class="fc-face"><span class="tier-badge ${w.tier}">${w.tier}</span>${front}<div class="fc-meta">tap to flip</div>${dir === "g2e" ? speakMarkup(w) : ""}</div>
+      <div class="fc-face fc-back">${back}${front}<div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div>${speakMarkup(w)}</div>
     </div></div>
     ${hintMarkup(w)}
     <div class="grade-row">
@@ -389,6 +435,7 @@ function renderFlash() {
     </div>`;
 
   mountHint(w);
+  mountSpeak();
   view.querySelector("#fc").onclick = e => e.currentTarget.classList.toggle("flipped");
   view.querySelector("#next").onclick = () => { deckPos++; renderFlash(); };
   view.querySelector("#prev").onclick = () => { deckPos = (deckPos - 1 + deck.length) % deck.length; renderFlash(); };
@@ -441,7 +488,8 @@ function renderQuiz() {
   const w = quiz.items[quiz.pos];
   const dir = pickDirection();
   const prompt = dir === "g2e"
-    ? `<div class="fc-word greek" style="margin:14px 0">${esc(w.g)}</div>`
+    ? `<div class="fc-word greek" style="margin:14px 0">${esc(w.g)}</div>
+       <div class="speak-inline">${speakMarkup(w)}</div>`
     : `<div class="fc-gloss" style="margin:14px 0">${esc(w.gloss)}</div>`;
 
   if (quiz.type === "mc") {
@@ -454,6 +502,7 @@ function renderQuiz() {
       ${hintMarkup(w)}
       ${choices.map(c => `<button class="choice ${dir === "g2e" ? "" : "greek"}" data-v="${esc(c)}">${esc(c)}</button>`).join("")}`;
     mountHint(w);
+    mountSpeak();
     view.querySelectorAll(".choice").forEach(btn => btn.onclick = () => {
       const ok = btn.dataset.v === w[key];
       view.querySelectorAll(".choice").forEach(b => {
@@ -479,6 +528,7 @@ function renderQuiz() {
       </div>
       ${hintMarkup(w)}`;
     mountHint(w);
+    mountSpeak();
     const input = view.querySelector("#ans");
     input.focus();
     const check = () => {
@@ -495,8 +545,9 @@ function renderQuiz() {
       if (ok) quiz.right++;
       grade(w.id, ok ? 4 : 0);
       view.querySelector("#fb").innerHTML = ok
-        ? `<div class="feedback ok">✓ Correct — <span class="greek">${esc(w.g)}</span> = ${esc(w.gloss)}</div>`
-        : `<div class="feedback no">✗ Answer: <span class="greek">${esc(w.g)}</span> = ${esc(w.gloss)}</div>`;
+        ? `<div class="feedback ok">✓ Correct — <span class="greek">${esc(w.g)}</span> = ${esc(w.gloss)} ${speakMarkup(w, "speak-sm")}</div>`
+        : `<div class="feedback no">✗ Answer: <span class="greek">${esc(w.g)}</span> = ${esc(w.gloss)} ${speakMarkup(w, "speak-sm")}</div>`;
+      mountSpeak();
       view.querySelector("#check").textContent = "Next →";
       view.querySelector("#check").onclick = () => { quiz.pos++; renderQuiz(); };
       input.onkeydown = e => { if (e.key === "Enter") { quiz.pos++; renderQuiz(); } };
@@ -561,6 +612,7 @@ function openWordEditor(w) {
       <span class="tier-badge ${w.tier}">${w.tier}</span>
       <div class="fc-word greek" style="margin:10px 0">${esc(w.g)}</div>
       <div class="fc-gloss">${esc(w.gloss)}</div>
+      <div class="speak-inline">${speakMarkup(w)}</div>
       <div class="fc-meta" style="margin-top:8px">${esc(w.setTitle)} \u00b7 NT freq ${w.freq ?? "?"}</div>
     </div>
     <div class="card-panel">
@@ -575,6 +627,7 @@ function openWordEditor(w) {
       <div id="hint-fb"></div>
     </div>`;
 
+  mountSpeak();
   let pendingBlob = null;
   const fb = view.querySelector("#hint-fb");
   const fileInput = view.querySelector("#pic");
@@ -640,6 +693,10 @@ function renderSettings() {
       </div>
     </div>
     <div class="card-panel">
+      <h2>Pronunciation</h2>
+      <p class="muted" id="voice-note"></p>
+    </div>
+    <div class="card-panel">
       <h2>Word Tiers</h2>
       <label class="row"><span>Vocabulary to Memorize</span><input type="checkbox" id="t-mem" ${settings.tiers.memorize ? "checked" : ""}></label>
       <label class="row"><span>Vocabulary to Recognize</span><input type="checkbox" id="t-rec" ${settings.tiers.recognize ? "checked" : ""}></label>
@@ -660,6 +717,16 @@ function renderSettings() {
       <button class="btn small secondary" id="reset" style="color:var(--bad)">Reset all progress</button>
       <p class="muted" style="margin-top:10px">Backups carry your progress, settings and custom sets. Hint pictures stay on this device \u2014 they are too large for a pasted backup, so add them again if you move to a new phone.</p>
     </div>`;
+
+  const voiceNote = view.querySelector("#voice-note");
+  if (!speechReady()) {
+    voiceNote.textContent = "This browser has no speech support, so the speaker buttons are hidden.";
+  } else {
+    const v = greekVoice();
+    voiceNote.textContent = v
+      ? `Using the Greek voice \u201c${v.name}\u201d \u2014 modern Greek pronunciation, not the Erasmian your class may use.`
+      : "No Greek voice is installed, so your device reads the Greek with its default voice. Adding a Greek language voice in your system settings makes it much more accurate.";
+  }
 
   view.querySelectorAll("#dir .pill").forEach(p => p.onclick = () => {
     settings.direction = p.dataset.d; saveSettings(); renderSettings();
