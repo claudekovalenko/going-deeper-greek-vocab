@@ -1,3 +1,371 @@
+<title>Koine Vocab Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&family=Spectral:wght@400;600;800&display=swap">
+<style>
+/* ---- tokens: light (default, un-stamped) ---- */
+:root {
+  --ground:   #F7F7FA;
+  --surface:  #FFFFFF;
+  --surface-2:#EFEFF6;
+  --ink:      #171A2B;
+  --muted:    #5C6180;
+  --rule:     #DCDCE8;
+  --lapis:    #1F3F94;
+  --lapis-ink:#FFFFFF;
+  --rubric:   #C8102E;
+  --good:     #16794F;
+  --warn:     #A8690C;
+  --bad:      #B3261E;
+  --tint:     rgba(31,63,148,.07);
+
+  --f-greek: "Gentium Book Plus", "Palatino Linotype", Palatino, Georgia, serif;
+  --f-disp:  "Spectral", Georgia, "Times New Roman", serif;
+  --f-ui:    "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --r: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:   #0E1020;
+    --surface:  #171A2E;
+    --surface-2:#20243C;
+    --ink:      #E8E9F2;
+    --muted:    #9BA1C0;
+    --rule:     #2C3150;
+    --lapis:    #7D9BF0;
+    --lapis-ink:#0E1020;
+    --rubric:   #F2555F;
+    --good:     #4ECB93;
+    --warn:     #E3A93C;
+    --bad:      #F2555F;
+    --tint:     rgba(125,155,240,.11);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:   #0E1020;
+  --surface:  #171A2E;
+  --surface-2:#20243C;
+  --ink:      #E8E9F2;
+  --muted:    #9BA1C0;
+  --rule:     #2C3150;
+  --lapis:    #7D9BF0;
+  --lapis-ink:#0E1020;
+  --rubric:   #F2555F;
+  --good:     #4ECB93;
+  --warn:     #E3A93C;
+  --bad:      #F2555F;
+  --tint:     rgba(125,155,240,.11);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--f-ui);
+  background: var(--ground);
+  color: var(--ink);
+  min-height: 100dvh;
+  display: flex; flex-direction: column;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.greek { font-family: var(--f-greek); }
+
+/* ---- chrome ---- */
+#topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 14px 20px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+#app-title {
+  font-family: var(--f-disp); font-weight: 800; font-size: 1.15rem;
+  letter-spacing: -.01em;
+}
+#app-title .om { color: var(--rubric); font-family: var(--f-greek); margin-right: .3em; }
+.icon-btn {
+  background: none; border: none; color: var(--muted);
+  font-family: var(--f-ui); font-size: .7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .14em; cursor: pointer; padding: 4px;
+}
+.icon-btn:hover { color: var(--lapis); }
+
+#view { flex: 1; width: 100%; max-width: 44rem; margin: 0 auto; padding: 20px 20px 108px; }
+
+#tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  display: flex; background: var(--surface); border-top: 1px solid var(--rule);
+}
+#tabbar .tab {
+  flex: 1; background: none; border: none; cursor: pointer;
+  color: var(--muted); font-family: var(--f-ui);
+  font-size: .58rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  padding: 9px 2px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border-top: 2px solid transparent; margin-top: -1px;
+}
+#tabbar .tab.active { color: var(--lapis); border-top-color: var(--lapis); }
+.tab-icon {
+  font-family: var(--f-greek); font-size: 1.2rem; line-height: 1;
+  font-weight: 700; text-transform: none; letter-spacing: 0;
+}
+
+/* ---- panels: a ruled folio leaf ---- */
+.card-panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rubric);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+h2 {
+  font-family: var(--f-ui); font-size: .64rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .16em; color: var(--muted);
+  margin-bottom: 12px;
+}
+h3 { font-family: var(--f-disp); font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; text-wrap: balance; }
+.muted { color: var(--muted); font-size: .82rem; line-height: 1.55; }
+
+/* ---- stats ---- */
+.stat-row { display: flex; gap: 8px; }
+.stat {
+  flex: 1; background: var(--surface-2); border-radius: var(--r);
+  padding: 12px 6px; text-align: center;
+}
+.stat .num {
+  font-family: var(--f-disp); font-size: 1.7rem; font-weight: 800; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--lapis);
+}
+.stat .lbl {
+  font-size: .56rem; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .13em; margin-top: 5px;
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: block; width: 100%;
+  background: var(--lapis); color: var(--lapis-ink);
+  border: 1px solid var(--lapis); border-radius: var(--r);
+  padding: 12px 14px; margin-top: 10px;
+  font-family: var(--f-ui); font-size: .84rem; font-weight: 600; letter-spacing: .02em;
+  cursor: pointer;
+}
+.btn.secondary { background: var(--surface); color: var(--ink); border-color: var(--rule); text-align: left; }
+.btn.secondary:hover { border-color: var(--lapis); color: var(--lapis); }
+.btn.small { padding: 9px 12px; font-size: .76rem; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: default; }
+:focus-visible { outline: 2px solid var(--lapis); outline-offset: 2px; }
+
+/* ---- flashcard ---- */
+.flashcard-wrap { perspective: 1400px; margin: 12px 0; }
+.flashcard {
+  position: relative; width: 100%; min-height: 268px;
+  transform-style: preserve-3d; transition: transform .5s cubic-bezier(.22,.61,.36,1);
+  cursor: pointer;
+}
+.flashcard.flipped { transform: rotateY(180deg); }
+.fc-face {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  background: var(--surface); border: 1px solid var(--rule);
+  border-left: 3px solid var(--rubric); border-radius: var(--r);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 26px 22px; text-align: center; gap: 12px;
+}
+.fc-back { transform: rotateY(180deg); background: var(--surface-2); }
+.fc-word { font-family: var(--f-greek); font-size: 2.15rem; line-height: 1.22; letter-spacing: .005em; }
+.fc-gloss { font-family: var(--f-disp); font-size: 1.3rem; line-height: 1.35; text-wrap: balance; }
+.fc-meta {
+  font-size: .6rem; color: var(--muted); text-transform: uppercase; letter-spacing: .13em;
+  font-variant-numeric: tabular-nums;
+}
+.tier-badge {
+  font-size: .55rem; font-weight: 700; text-transform: uppercase; letter-spacing: .16em;
+  padding: 3px 9px; border-radius: 999px;
+  border: 1px solid var(--rule); color: var(--muted); background: var(--surface-2);
+}
+.tier-badge.memorize { color: var(--rubric); border-color: var(--rubric); background: transparent; }
+
+/* ---- grading ---- */
+.grade-row { display: flex; gap: 7px; margin-top: 12px; }
+.grade-row .btn { margin-top: 0; font-size: .74rem; padding: 11px 3px; text-align: center; }
+.g-again { background: transparent; color: var(--bad); border-color: var(--bad); }
+.g-hard  { background: transparent; color: var(--warn); border-color: var(--warn); }
+.g-good  { background: transparent; color: var(--good); border-color: var(--good); }
+.g-easy  { background: var(--lapis); color: var(--lapis-ink); border-color: var(--lapis); }
+
+.progress-line { height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; margin: 7px 0 4px; }
+.progress-line > div { height: 100%; background: var(--rubric); transition: width .35s ease; }
+
+/* ---- quiz ---- */
+.choice {
+  display: block; width: 100%; text-align: left;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--r);
+  padding: 13px 15px; margin-top: 8px;
+  font-family: var(--f-ui); font-size: .95rem; line-height: 1.35; cursor: pointer;
+}
+.choice.greek { font-family: var(--f-greek); font-size: 1.15rem; }
+.choice:not(:disabled):hover { border-color: var(--lapis); background: var(--tint); }
+.choice.correct { border-color: var(--good); color: var(--good); background: transparent; font-weight: 600; }
+.choice.wrong { border-color: var(--bad); color: var(--bad); background: transparent; }
+
+input[type="text"], select, textarea {
+  width: 100%; background: var(--surface-2); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: var(--r);
+  padding: 11px 12px; margin-top: 8px;
+  font-family: var(--f-ui); font-size: 1rem;
+}
+input[type="text"].greek { font-family: var(--f-greek); font-size: 1.2rem; }
+textarea { min-height: 110px; font-size: .8rem; line-height: 1.5; }
+
+/* ---- word list ---- */
+.word-row {
+  display: flex; align-items: baseline; gap: 11px;
+  padding: 9px 2px; border-bottom: 1px solid var(--rule);
+}
+.word-row .g { font-family: var(--f-greek); font-size: 1.1rem; }
+.word-row .e {
+  color: var(--muted); font-size: .78rem; text-align: right; flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--rule); align-self: center; }
+.dot.learning { background: var(--warn); }
+.dot.known { background: var(--good); }
+
+.pill-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+.pill {
+  border: 1px solid var(--rule); background: var(--surface); color: var(--muted);
+  border-radius: 999px; padding: 6px 13px; cursor: pointer;
+  font-family: var(--f-ui); font-size: .68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+}
+.pill:hover { border-color: var(--lapis); color: var(--lapis); }
+.pill.on { background: var(--lapis); color: var(--lapis-ink); border-color: var(--lapis); }
+
+.feedback {
+  margin-top: 12px; padding: 10px 12px; border-radius: var(--r);
+  font-size: .88rem; line-height: 1.45; border: 1px solid;
+}
+.feedback.ok { color: var(--good); border-color: var(--good); }
+.feedback.no { color: var(--bad); border-color: var(--bad); }
+.feedback .greek { font-size: 1.05rem; }
+
+label.row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 0; font-size: .88rem; border-bottom: 1px solid var(--rule);
+}
+label.row:last-of-type { border-bottom: none; }
+input[type="checkbox"] { accent-color: var(--lapis); width: 17px; height: 17px; flex: none; }
+select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<header id="topbar">
+  <h1 id="app-title"><span class="om">Ω</span>Koine Vocab</h1>
+  <button id="btn-settings" class="icon-btn" title="Settings">Settings</button>
+</header>
+
+<main id="view"></main>
+
+<nav id="tabbar">
+  <button data-view="home" class="tab active"><span class="tab-icon">ο</span>Home</button>
+  <button data-view="review" class="tab"><span class="tab-icon">ἀ</span>Review</button>
+  <button data-view="flash" class="tab"><span class="tab-icon">κ</span>Cards</button>
+  <button data-view="quiz" class="tab"><span class="tab-icon">τ</span>Quiz</button>
+  <button data-view="browse" class="tab"><span class="tab-icon">λ</span>Words</button>
+</nav>
+
+<script>
+// ============================================================
+// Greek Vocabulary Database
+// ------------------------------------------------------------
+// Each set has: id, source, title, and words.
+// Each word: g (Greek lexical form), gloss (English), freq (NT
+// frequency count from the workbook), tier ('memorize' | 'recognize').
+//
+// To add new vocabulary: upload workbook photos to Claude and a
+// new set object gets appended here. Custom sets added in-app are
+// stored in localStorage and merged at runtime.
+// ============================================================
+
+const VOCAB_SETS = [
+  {
+    id: "gd-set-01",
+    source: "Going Deeper with New Testament Greek",
+    title: "Set 1 — Mark 1 Vocabulary",
+    words: [
+      // ---- Vocabulary to Memorize ----
+      { g: "ἀπαγγέλλω", gloss: "I announce, proclaim, report", freq: 45, tier: "memorize" },
+      { g: "ἀποδίδωμι", gloss: "I give away, pay, return", freq: 48, tier: "memorize" },
+      { g: "ἄρα", gloss: "so, then, consequently", freq: 49, tier: "memorize" },
+      { g: "ἄφεσις, -εως, ἡ", gloss: "forgiveness", freq: 17, tier: "memorize" },
+      { g: "ἄχρι", gloss: "until (conj. or prep. + gen.)", freq: 49, tier: "memorize" },
+      { g: "βάπτισμα, -ατος, τό", gloss: "baptism", freq: 19, tier: "memorize" },
+      { g: "δεύτερος", gloss: "second", freq: 43, tier: "memorize" },
+      { g: "διακονέω", gloss: "I serve", freq: 37, tier: "memorize" },
+      { g: "διέρχομαι", gloss: "I go through, cross over", freq: 43, tier: "memorize" },
+      { g: "ἐκπορεύομαι", gloss: "I go out, come out", freq: 33, tier: "memorize" },
+      { g: "ἐνδύω", gloss: "I clothe myself, put on, wear", freq: 27, tier: "memorize" },
+      { g: "ἐπιγινώσκω", gloss: "I know, understand, recognize", freq: 44, tier: "memorize" },
+      { g: "ἔρημος, ἡ", gloss: "desert, wilderness", freq: 48, tier: "memorize" },
+      { g: "ἑτοιμάζω", gloss: "I make ready, prepare", freq: 40, tier: "memorize" },
+      { g: "ἔτος, -ους, τό", gloss: "year", freq: 49, tier: "memorize" },
+      { g: "εὐδοκέω", gloss: "I am well pleased, approve", freq: 21, tier: "memorize" },
+      { g: "Ἠσαΐας, ὁ", gloss: "Isaiah", freq: 22, tier: "memorize" },
+      { g: "θηρίον, τό", gloss: "animal, beast", freq: 46, tier: "memorize" },
+      { g: "θλῖψις, -εως, ἡ", gloss: "tribulation, affliction, oppression", freq: 45, tier: "memorize" },
+      { g: "θρίξ, τριχός, ἡ", gloss: "hair", freq: 15, tier: "memorize" },
+      { g: "ἱκανός", gloss: "qualified, able", freq: 39, tier: "memorize" },
+      { g: "Ἰορδάνης, -ου, ὁ", gloss: "the Jordan", freq: 15, tier: "memorize" },
+      { g: "ἰσχυρός", gloss: "strong, mighty, powerful", freq: 29, tier: "memorize" },
+      { g: "καθίζω", gloss: "I cause to sit down, appoint", freq: 46, tier: "memorize" },
+      { g: "κρατέω", gloss: "I grasp, hold (fast), arrest", freq: 47, tier: "memorize" },
+      { g: "μετάνοια, ἡ", gloss: "repentance", freq: 22, tier: "memorize" },
+      { g: "ναός, ὁ", gloss: "temple, sanctuary", freq: 45, tier: "memorize" },
+      { g: "ὅμοιος", gloss: "like, similar", freq: 45, tier: "memorize" },
+      { g: "ὀπίσω", gloss: "after, behind", freq: 35, tier: "memorize" },
+      { g: "οὐαί", gloss: "woe", freq: 46, tier: "memorize" },
+      { g: "οὐκέτι", gloss: "no longer", freq: 47, tier: "memorize" },
+      { g: "πειράζω", gloss: "I tempt, test", freq: 38, tier: "memorize" },
+      { g: "ποταμός, ὁ", gloss: "river", freq: 17, tier: "memorize" },
+      { g: "πρό", gloss: "before, in front of, at (+ gen.)", freq: 47, tier: "memorize" },
+      { g: "προσφέρω", gloss: "I bring to, offer", freq: 47, tier: "memorize" },
+      { g: "Σατανᾶς, -ᾶ, ὁ", gloss: "Satan", freq: 36, tier: "memorize" },
+      { g: "σταυρόω", gloss: "I crucify", freq: 46, tier: "memorize" },
+      { g: "τεσσεράκοντα", gloss: "forty", freq: 22, tier: "memorize" },
+      { g: "φυλακή, ἡ", gloss: "watch, guard, prison", freq: 47, tier: "memorize" },
+      { g: "χώρα, ἡ", gloss: "district, region", freq: 28, tier: "memorize" },
+      // ---- Vocabulary to Recognize ----
+      { g: "ἄγριος", gloss: "wild", freq: 3, tier: "recognize" },
+      { g: "ἀκρίς, -ίδος, ἡ", gloss: "locust", freq: 4, tier: "recognize" },
+      { g: "βοάω", gloss: "I call, shout, cry out", freq: 12, tier: "recognize" },
+      { g: "δερμάτινος", gloss: "(made of) leather", freq: 2, tier: "recognize" },
+      { g: "ἐξομολογέω", gloss: "I confess, admit", freq: 10, tier: "recognize" },
+      { g: "εὐθύς", gloss: "straight", freq: 8, tier: "recognize" },
+      { g: "ζώνη, ἡ", gloss: "belt", freq: 8, tier: "recognize" },
+      { g: "Ἱεροσολυμίτης, -ου, ὁ", gloss: "inhabitant of Jerusalem", freq: 2, tier: "recognize" },
+      { g: "ἱμάς, -άντος, ὁ", gloss: "strap, thong", freq: 4, tier: "recognize" },
+      { g: "κάμηλος, ὁ", gloss: "camel", freq: 6, tier: "recognize" },
+      { g: "κατασκευάζω", gloss: "I make ready, prepare", freq: 11, tier: "recognize" },
+      { g: "κύπτω", gloss: "I bend down", freq: 2, tier: "recognize" },
+      { g: "μέλι, -ιτος, τό", gloss: "honey", freq: 4, tier: "recognize" },
+      { g: "Ναζαρέτ, ἡ", gloss: "Nazareth", freq: 12, tier: "recognize" },
+      { g: "ὀσφῦς, ἡ", gloss: "waist", freq: 8, tier: "recognize" },
+      { g: "περιστερά, ἡ", gloss: "dove, pigeon", freq: 10, tier: "recognize" },
+      { g: "σχίζω", gloss: "I split, divide, separate, tear apart", freq: 11, tier: "recognize" },
+      { g: "τρίβος, ἡ", gloss: "path", freq: 3, tier: "recognize" },
+      { g: "ὑπόδημα, -ατος, τό", gloss: "sandal", freq: 10, tier: "recognize" }
+    ]
+  }
+];
+</script>
+<script>
 /* Greek Vocab PWA — flashcards, quizzes, and spaced repetition */
 "use strict";
 
@@ -541,6 +909,4 @@ function renderSettings() {
 
 // ---------------- boot ----------------
 show("home");
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
-}
+</script>
