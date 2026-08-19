@@ -428,7 +428,7 @@ let settings = store.load(LS_SETTINGS, {
   tiers: { memorize: true, recognize: true },
   enabledSets: {},           // setId -> bool (default true)
   quizSize: 10,
-  pron: "erasmian"           // erasmian | modern
+  pron: "koine"              // koine | erasmian | modern
 });
 let customSets = store.load(LS_CUSTOM, []);
 
@@ -465,6 +465,16 @@ const ERASMIAN = {
   digraph: { αι:"eye", ει:"ay", οι:"oy", υι:"wee", αυ:"ow", ευ:"eh-oo", ηυ:"ay-oo", ου:"oo" }
 };
 
+// Reconstructed first-century Koine, along the lines of Randall Buth's system:
+// β/γ/δ already fricatives, αι levelled with ε, ει with ι, υ and οι still the
+// front-rounded /y/, but η not yet collapsed into /i/.
+const KOINE = {
+  single: { α:"ah", ε:"eh", η:"ay", ι:"ee", ο:"o", υ:"ew", ω:"o",
+            β:"v", γ:"gh", δ:"th", ζ:"z", θ:"th", κ:"k", λ:"l", μ:"m", ν:"n",
+            ξ:"x", π:"p", ρ:"r", σ:"s", ς:"s", τ:"t", φ:"f", χ:"kh", ψ:"ps" },
+  digraph: { αι:"eh", ει:"ee", οι:"ew", υι:"ew", αυ:"av", ευ:"ev", ηυ:"ev", ου:"oo" }
+};
+
 const MODERN = {
   single: { α:"ah", ε:"eh", η:"ee", ι:"ee", ο:"o", υ:"ee", ω:"o",
             β:"v", γ:"gh", δ:"th", ζ:"z", θ:"th", κ:"k", λ:"l", μ:"m", ν:"n",
@@ -486,8 +496,10 @@ function join(out, chunk) {
   return out + chunk;
 }
 
+const SCHEMES = { koine: KOINE, modern: MODERN, erasmian: ERASMIAN };
+
 function translit(word, scheme) {
-  const map = scheme === "modern" ? MODERN : ERASMIAN;
+  const map = SCHEMES[scheme] || KOINE;
   const L = greekLetters(word);
   let out = "", i = 0;
 
@@ -535,7 +547,7 @@ function greekVoice() {
 //   erasmian — always a respelling, since no voice on earth speaks Erasmian
 //   modern   — real Greek if a Greek voice exists, else a respelling
 function speechPlan(greek) {
-  const scheme = settings.pron || "erasmian";
+  const scheme = settings.pron || "koine";
   const gv = scheme === "modern" ? greekVoice() : null;
   return gv
     ? { text: greek, voice: gv, lang: gv.lang }
@@ -1197,9 +1209,11 @@ function renderSettings() {
     <div class="card-panel">
       <h2>Pronunciation</h2>
       <div class="pill-row" id="pron">
-        <button class="pill ${(settings.pron || "erasmian") === "erasmian" ? "on" : ""}" data-p="erasmian">Erasmian</button>
+        <button class="pill ${(settings.pron || "koine") === "koine" ? "on" : ""}" data-p="koine">Koine (1st c.)</button>
+        <button class="pill ${settings.pron === "erasmian" ? "on" : ""}" data-p="erasmian">Erasmian</button>
         <button class="pill ${settings.pron === "modern" ? "on" : ""}" data-p="modern">Modern Greek</button>
       </div>
+      <p class="muted" id="pron-about"></p>
       <p class="muted" id="voice-note"></p>
       <p class="muted" style="margin-top:8px">Sample: <span class="greek">ἀπαγγέλλω</span> \u2192 <span id="pron-sample"></span></p>
       <button class="btn small secondary" id="pron-try">Hear the sample</button>
@@ -1228,7 +1242,13 @@ function renderSettings() {
 
   const voiceNote = view.querySelector("#voice-note");
   const sampleEl = view.querySelector("#pron-sample");
+  const ABOUT = {
+    koine: "Reconstructed first-century pronunciation \u2014 how the New Testament most likely sounded. β is v, δ is th, αι sounds like ε, and ει like ι.",
+    erasmian: "The classroom convention used in most seminaries. Not historical, but it keeps every letter distinct, which helps with spelling.",
+    modern: "Greek as spoken today. Uses a real Greek voice when your device has one installed."
+  };
   const describe = () => {
+    view.querySelector("#pron-about").textContent = ABOUT[settings.pron || "koine"];
     if (!speechReady()) {
       voiceNote.textContent = "This browser has no speech support, so the speaker buttons are hidden.";
       sampleEl.textContent = "\u2014";
