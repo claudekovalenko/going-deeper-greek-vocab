@@ -80,7 +80,7 @@ h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .btn:disabled { opacity: .45; }
 
 /* Flashcard */
-.flashcard-wrap { perspective: 1200px; margin: 10px 0; }
+.flashcard-wrap { perspective: 1200px; margin: 10px 0; position: relative; }
 .flashcard {
   position: relative; width: 100%; min-height: 260px;
   transform-style: preserve-3d; transition: transform .45s;
@@ -181,8 +181,10 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--panel-2); color: var(--accent-2);
   border: 1px solid #2b3757; border-radius: 50%;
-  cursor: pointer; z-index: 2;
+  cursor: pointer;
 }
+/* Sits on the wrapper, above the flipping faces but not inside them. */
+.speak-btn.card-speak { z-index: 3; }
 .speak-btn:active { transform: scale(.92); }
 .speak-inline { display: flex; justify-content: center; margin-top: 4px; }
 .speak-inline .speak-btn { position: static; }
@@ -191,3 +193,6 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
   vertical-align: middle; margin-left: 6px;
 }
 .speak-btn.speak-sm svg { width: 15px; height: 15px; }
+
+/* The hidden attribute must beat any display rule set below. */
+[hidden] { display: none !important; }

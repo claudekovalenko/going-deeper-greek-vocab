@@ -158,10 +158,12 @@ function speakGreek(greek) {
 }
 
 // The lexical entry carries parsing info ("θρίξ, τριχός, ἡ"); say the word itself.
-function speakMarkup(w, extraClass = "") {
+// untilRevealed: on an English-prompt card, hearing the Greek would give the
+// answer away, so the button waits for the flip.
+function speakMarkup(w, extraClass = "", untilRevealed = false) {
   if (!speechReady()) return "";
   const say = headword(w.g);
-  return `<button class="speak-btn ${extraClass}" data-say="${esc(say)}"
+  return `<button class="speak-btn ${extraClass}" data-say="${esc(say)}" ${untilRevealed ? "hidden" : ""}
       aria-label="Hear ${esc(say)} pronounced" title="Hear it">${SPEAKER_ICON}</button>`;
 }
 
@@ -179,7 +181,7 @@ function mountSpeak() {
 // Photos are far too large for localStorage, so hints live in IndexedDB.
 // Everything is mirrored into `hints` at boot so rendering stays synchronous.
 const HINT_DB = "gv-hints-v1", HINT_STORE = "hints";
-let hints = {};            // wordId -> { blob?: Blob, note?: string }
+let hints = {};            // wordId -> { buf?: ArrayBuffer, type?: string, note?: string }
 const hintUrls = {};       // wordId -> object URL, made on first use
 
 function openHintDb() {
@@ -212,10 +214,25 @@ async function loadHints() {
         keys.result.forEach((k, i) => { out[k] = vals.result[i]; });
         resolve(out);
       };
+      tx.onabort = () => reject(tx.error);
       tx.onerror = () => reject(tx.error);
     });
   } catch {
     hints = {}; // private browsing or no IndexedDB — hints just stay unavailable
+    return;
+  }
+  // Pictures saved by an older version are Blobs; convert them once so they
+  // survive future reloads.
+  for (const [id, h] of Object.entries(hints)) {
+    if (h && h.blob && !h.buf) {
+      try {
+        const buf = await h.blob.arrayBuffer();
+        await putHint(id, { buf, type: h.blob.type || "image/jpeg", note: h.note });
+      } catch {
+        delete hints[id];          // the blob is already dead; drop the corpse
+        await removeHint(id).catch(() => {});
+      }
+    }
   }
 }
 
@@ -233,13 +250,16 @@ async function removeHint(id) {
 
 function hasHint(id) {
   const h = hints[id];
-  return !!(h && (h.blob || h.note));
+  return !!(h && (h.buf || h.note));
 }
 
 function hintUrl(id) {
   const h = hints[id];
-  if (!h || !h.blob) return null;
-  if (!hintUrls[id]) hintUrls[id] = URL.createObjectURL(h.blob);
+  if (!h || !h.buf) return null;
+  if (!hintUrls[id]) {
+    const blob = new Blob([h.buf], { type: h.type || "image/jpeg" });
+    hintUrls[id] = URL.createObjectURL(blob);
+  }
   return hintUrls[id];
 }
 
@@ -469,14 +489,12 @@ function renderReview() {
       <div class="fc-face">
         <span class="tier-badge ${w.tier}">${w.tier}</span>${front}
         <div class="fc-meta">tap to reveal</div>
-        ${dir === "g2e" ? speakMarkup(w) : ""}
       </div>
       <div class="fc-face fc-back">
         ${back}${front}
         <div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div>
-        ${speakMarkup(w)}
       </div>
-    </div></div>
+    </div>${speakMarkup(w, "card-speak", dir === "e2g")}</div>
     ${hintMarkup(w)}
     <div class="grade-row" id="grades" style="visibility:hidden">
       <button class="btn g-again">Again</button>
@@ -488,8 +506,10 @@ function renderReview() {
   mountHint(w);
   mountSpeak();
   const fc = view.querySelector("#fc");
+  const cardSpeak = view.querySelector(".card-speak");
   fc.onclick = () => {
     fc.classList.toggle("flipped");
+    if (cardSpeak) cardSpeak.hidden = false;
     view.querySelector("#grades").style.visibility = "visible";
   };
   const gradeAndNext = q => {
@@ -530,9 +550,9 @@ function renderFlash() {
   view.innerHTML = `
     <div class="muted">Card ${deckPos % deck.length + 1} / ${deck.length}</div>
     <div class="flashcard-wrap"><div class="flashcard" id="fc">
-      <div class="fc-face"><span class="tier-badge ${w.tier}">${w.tier}</span>${front}<div class="fc-meta">tap to flip</div>${dir === "g2e" ? speakMarkup(w) : ""}</div>
-      <div class="fc-face fc-back">${back}${front}<div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div>${speakMarkup(w)}</div>
-    </div></div>
+      <div class="fc-face"><span class="tier-badge ${w.tier}">${w.tier}</span>${front}<div class="fc-meta">tap to flip</div></div>
+      <div class="fc-face fc-back">${back}${front}<div class="fc-meta">${esc(w.setTitle)} · NT freq ${w.freq ?? "?"}</div></div>
+    </div>${speakMarkup(w, "card-speak", dir === "e2g")}</div>
     ${hintMarkup(w)}
     <div class="grade-row">
       <button class="btn secondary" id="prev">← Prev</button>
@@ -542,7 +562,11 @@ function renderFlash() {
 
   mountHint(w);
   mountSpeak();
-  view.querySelector("#fc").onclick = e => e.currentTarget.classList.toggle("flipped");
+  const flashSpeak = view.querySelector(".card-speak");
+  view.querySelector("#fc").onclick = e => {
+    e.currentTarget.classList.toggle("flipped");
+    if (flashSpeak) flashSpeak.hidden = false;
+  };
   view.querySelector("#next").onclick = () => { deckPos++; renderFlash(); };
   view.querySelector("#prev").onclick = () => { deckPos = (deckPos - 1 + deck.length) % deck.length; renderFlash(); };
   view.querySelector("#shuf").onclick = () => { deck = shuffle(deck); deckPos = 0; renderFlash(); };
@@ -759,13 +783,15 @@ function openWordEditor(w) {
 
   view.querySelector("#save").onclick = async () => {
     const note = view.querySelector("#note").value.trim();
-    const blob = pendingBlob || (hints[w.id] && hints[w.id].blob) || null;
-    if (!blob && !note) {
+    const existing = hints[w.id] || {};
+    const buf = pendingBlob ? await pendingBlob.arrayBuffer() : existing.buf || null;
+    const type = pendingBlob ? pendingBlob.type : existing.type;
+    if (!buf && !note) {
       fb.innerHTML = `<div class="feedback no">Add a picture or a note first.</div>`;
       return;
     }
     try {
-      await putHint(w.id, { blob, note });
+      await putHint(w.id, { buf, type, note });
       fb.innerHTML = `<div class="feedback ok">Hint saved.</div>`;
     } catch {
       fb.innerHTML = `<div class="feedback no">Could not save \u2014 this device may be out of storage.</div>`;
