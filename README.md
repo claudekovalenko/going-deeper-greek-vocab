@@ -10,7 +10,7 @@ A standalone, installable Progressive Web App for learning Biblical Greek vocabu
 - **Word list** — searchable (accent-insensitive), filterable by tier and learning status.
 - **Tiers** — study "Vocabulary to Memorize" and "Vocabulary to Recognize" together or separately.
 - **Offline-first PWA** — install to the home screen; everything works with no connection.
-- **Memory hints** — attach a picture (or a note/mnemonic) to any word from the word list. It stays hidden while you study until you tap "Show hint". Photos are downscaled and kept in IndexedDB on the device.
+- **Memory hints** — attach a picture (or a note/mnemonic) to any word, either from the word list or straight from the card while reviewing. It stays hidden while you study until you tap "Show hint". Photos are downscaled and kept in IndexedDB on the device.
 - **Hear the word** — a speaker button in the corner of every card pronounces the Greek offline. Because no TTS voice reads polytonic Greek (and none speaks Erasmian at all), each word is respelled phonetically for the voice: `ἀπαγγέλλω` → `ahpahng-gehl-loh`. Choose Koine (reconstructed 1st century, the default), Erasmian, or Modern in Settings; with Modern plus an installed Greek voice it reads the real Greek instead.
 - **Growing database** — new workbook pages become new sets in `js/data.js`; sets can be toggled on/off. You can also paste a set as JSON under Settings, and export/import a full backup (progress + custom sets).
 

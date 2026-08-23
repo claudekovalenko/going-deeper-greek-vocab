@@ -196,3 +196,6 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
 
 /* The hidden attribute must beat any display rule set below. */
 [hidden] { display: none !important; }
+
+.hint-add { opacity: .72; font-weight: 600; }
+.btn-inline { margin-top: 4px; font-size: .8rem; padding: 8px 14px; width: auto; }

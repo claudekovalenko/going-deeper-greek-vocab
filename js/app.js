@@ -282,11 +282,16 @@ function shrinkImage(file, max = 900) {
   });
 }
 
-// Shared hint strip for the study screens: a button that reveals the picture.
-function hintMarkup(w) {
-  if (!hasHint(w.id)) return "";
+// Shared hint strip for the study screens. When the word has a hint it reveals
+// it; when it does not, it offers to add one right there, so a picture can be
+// attached mid-session without going hunting through the word list.
+function hintMarkup(w, allowAdd = true) {
+  const has = hasHint(w.id);
+  if (!has && !allowAdd) return "";     // mid-quiz is no place to be filing photos
   return `<div class="hint-zone">
-      <button class="btn secondary hint-toggle" id="hint-btn">Show hint</button>
+      <input type="file" id="hint-pic" accept="image/*" hidden>
+      <button class="btn secondary ${has ? "hint-toggle" : "hint-add"}" id="hint-btn">${
+        has ? "Show hint" : "Add a picture"}</button>
       <div class="hint-body" id="hint-body" hidden></div>
     </div>`;
 }
@@ -295,15 +300,43 @@ function mountHint(w) {
   const btn = view.querySelector("#hint-btn");
   if (!btn) return;
   const body = view.querySelector("#hint-body");
+  const picker = view.querySelector("#hint-pic");
+
+  if (!hasHint(w.id)) {
+    btn.onclick = () => picker.click();
+    picker.onchange = async () => {
+      const f = picker.files[0];
+      if (!f) return;
+      btn.textContent = "Saving picture\u2026";
+      btn.disabled = true;
+      try {
+        const blob = await shrinkImage(f);
+        await putHint(w.id, {
+          buf: await blob.arrayBuffer(),
+          type: blob.type,
+          note: (hints[w.id] || {}).note
+        });
+        show(currentView);          // redraw this same card, now with its hint
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Add a picture";
+        body.innerHTML = `<div class="feedback no">${esc(e.message)}</div>`;
+        body.hidden = false;
+      }
+    };
+    return;
+  }
+
   btn.onclick = () => {
-    const showing = !body.hidden;
-    if (showing) { body.hidden = true; body.innerHTML = ""; btn.textContent = "Show hint"; return; }
+    if (!body.hidden) { body.hidden = true; body.innerHTML = ""; btn.textContent = "Show hint"; return; }
     const h = hints[w.id] || {};
     const url = hintUrl(w.id);
     body.innerHTML = `${url ? `<img class="hint-img" alt="Memory hint for ${esc(w.g)}" src="${url}">` : ""}
-      ${h.note ? `<p class="hint-note">${esc(h.note)}</p>` : ""}`;
+      ${h.note ? `<p class="hint-note">${esc(h.note)}</p>` : ""}
+      <button class="btn secondary btn-inline" id="hint-edit">Change this hint</button>`;
     body.hidden = false;
     btn.textContent = "Hide hint";
+    body.querySelector("#hint-edit").onclick = () => openWordEditor(w);
   };
 }
 
@@ -629,7 +662,7 @@ function renderQuiz() {
     view.innerHTML = `
       <div class="muted">Question ${quiz.pos + 1} / ${quiz.items.length} · ${quiz.right} correct</div>
       <div class="card-panel" style="text-align:center">${prompt}</div>
-      ${hintMarkup(w)}
+      ${hintMarkup(w, false)}
       ${choices.map(c => `<button class="choice ${dir === "g2e" ? "" : "greek"}" data-v="${esc(c)}">${esc(c)}</button>`).join("")}`;
     mountHint(w);
     mountSpeak();
@@ -656,7 +689,7 @@ function renderQuiz() {
         <button class="btn" id="check">Check</button>
         <div id="fb"></div>
       </div>
-      ${hintMarkup(w)}`;
+      ${hintMarkup(w, false)}`;
     mountHint(w);
     mountSpeak();
     const input = view.querySelector("#ans");
