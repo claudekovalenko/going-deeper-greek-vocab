@@ -199,3 +199,9 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
 
 .hint-add { opacity: .72; font-weight: 600; }
 .btn-inline { margin-top: 4px; font-size: .8rem; padding: 8px 14px; width: auto; }
+
+.hint-icon { font-size: 1.5rem; display: block; margin-bottom: 6px; }
+.hint-note.own { border-top: 1px solid #2b3757; padding-top: 10px; font-style: italic; }
+.hint-tools { width: 100%; border-top: 1px solid #2b3757; padding-top: 10px; }
+.hint-tool-row { display: flex; gap: 8px; }
+.hint-tool-row .btn { flex: 1; }

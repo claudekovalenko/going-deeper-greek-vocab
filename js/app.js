@@ -282,61 +282,83 @@ function shrinkImage(file, max = 900) {
   });
 }
 
-// Shared hint strip for the study screens. When the word has a hint it reveals
-// it; when it does not, it offers to add one right there, so a picture can be
-// attached mid-session without going hunting through the word list.
+// Shared hint strip for the study screens. Every word ships with a built-in
+// memory hook, so there is always something to reveal; a picture and a note of
+// your own layer on top of it.
+function hasOwnHint(id) {
+  const h = hints[id];
+  return !!(h && (h.buf || h.note));
+}
+
 function hintMarkup(w, allowAdd = true) {
-  const has = hasHint(w.id);
-  if (!has && !allowAdd) return "";     // mid-quiz is no place to be filing photos
+  if (!w.mn && !hasOwnHint(w.id) && !allowAdd) return "";
   return `<div class="hint-zone">
       <input type="file" id="hint-pic" accept="image/*" hidden>
-      <button class="btn secondary ${has ? "hint-toggle" : "hint-add"}" id="hint-btn">${
-        has ? "Show hint" : "Add a picture"}</button>
+      <button class="btn secondary hint-toggle" id="hint-btn">Show hint</button>
       <div class="hint-body" id="hint-body" hidden></div>
     </div>`;
 }
 
-function mountHint(w) {
+function mountHint(w, allowAdd = true) {
   const btn = view.querySelector("#hint-btn");
   if (!btn) return;
   const body = view.querySelector("#hint-body");
   const picker = view.querySelector("#hint-pic");
 
-  if (!hasHint(w.id)) {
-    btn.onclick = () => picker.click();
-    picker.onchange = async () => {
-      const f = picker.files[0];
-      if (!f) return;
-      btn.textContent = "Saving picture\u2026";
-      btn.disabled = true;
-      try {
-        const blob = await shrinkImage(f);
-        await putHint(w.id, {
-          buf: await blob.arrayBuffer(),
-          type: blob.type,
-          note: (hints[w.id] || {}).note
-        });
-        show(currentView);          // redraw this same card, now with its hint
-      } catch (e) {
-        btn.disabled = false;
-        btn.textContent = "Add a picture";
-        body.innerHTML = `<div class="feedback no">${esc(e.message)}</div>`;
-        body.hidden = false;
-      }
-    };
-    return;
-  }
+  const savePicture = async () => {
+    const f = picker.files[0];
+    if (!f) return;
+    try {
+      const blob = await shrinkImage(f);
+      await putHint(w.id, {
+        buf: await blob.arrayBuffer(),
+        type: blob.type,
+        note: (hints[w.id] || {}).note
+      });
+      show(currentView);                 // redraw this same card, hint included
+    } catch (e) {
+      body.insertAdjacentHTML("beforeend", `<div class="feedback no">${esc(e.message)}</div>`);
+    }
+  };
 
-  btn.onclick = () => {
-    if (!body.hidden) { body.hidden = true; body.innerHTML = ""; btn.textContent = "Show hint"; return; }
+  const saveNote = async text => {
+    const h = hints[w.id] || {};
+    await putHint(w.id, { buf: h.buf, type: h.type, note: text.trim() || undefined });
+  };
+
+  const draw = () => {
     const h = hints[w.id] || {};
     const url = hintUrl(w.id);
-    body.innerHTML = `${url ? `<img class="hint-img" alt="Memory hint for ${esc(w.g)}" src="${url}">` : ""}
-      ${h.note ? `<p class="hint-note">${esc(h.note)}</p>` : ""}
-      <button class="btn secondary btn-inline" id="hint-edit">Change this hint</button>`;
+    body.innerHTML = `
+      ${url ? `<img class="hint-img" alt="Your picture for ${esc(w.g)}" src="${url}">` : ""}
+      ${w.mn ? `<p class="hint-note">${w.icon ? `<span class="hint-icon">${w.icon}</span>` : ""}${esc(w.mn)}</p>` : ""}
+      ${allowAdd ? `
+        <div class="hint-tools">
+          <input type="text" id="my-note" placeholder="Your own reminder — sounds like…" value="${esc(h.note || "")}">
+          <div class="hint-tool-row">
+            <button class="btn secondary btn-inline" id="save-note">Save note</button>
+            <button class="btn secondary btn-inline" id="pick-pic">${url ? "Change picture" : "Add a picture"}</button>
+          </div>
+          <div id="note-fb"></div>
+        </div>` : (h.note ? `<p class="hint-note own">${esc(h.note)}</p>` : "")}`;
+
+    if (!allowAdd) return;
+    body.querySelector("#pick-pic").onclick = () => picker.click();
+    const noteInput = body.querySelector("#my-note");
+    const commit = async () => {
+      await saveNote(noteInput.value);
+      body.querySelector("#note-fb").innerHTML = `<div class="feedback ok">Saved.</div>`;
+    };
+    body.querySelector("#save-note").onclick = commit;
+    noteInput.onkeydown = e => { if (e.key === "Enter") commit(); };
+  };
+
+  picker.onchange = savePicture;
+  btn.onclick = () => {
+    if (!body.hidden) { body.hidden = true; body.innerHTML = ""; btn.textContent = "Show hint"; return; }
+    draw();
     body.hidden = false;
     btn.textContent = "Hide hint";
-    body.querySelector("#hint-edit").onclick = () => openWordEditor(w);
   };
 }
 
@@ -664,7 +686,7 @@ function renderQuiz() {
       <div class="card-panel" style="text-align:center">${prompt}</div>
       ${hintMarkup(w, false)}
       ${choices.map(c => `<button class="choice ${dir === "g2e" ? "" : "greek"}" data-v="${esc(c)}">${esc(c)}</button>`).join("")}`;
-    mountHint(w);
+    mountHint(w, false);
     mountSpeak();
     view.querySelectorAll(".choice").forEach(btn => btn.onclick = () => {
       const ok = btn.dataset.v === w[key];
@@ -690,7 +712,7 @@ function renderQuiz() {
         <div id="fb"></div>
       </div>
       ${hintMarkup(w, false)}`;
-    mountHint(w);
+    mountHint(w, false);
     mountSpeak();
     const input = view.querySelector("#ans");
     input.focus();
@@ -750,7 +772,7 @@ function renderBrowse() {
         <span class="dot ${wordStatus(w.id)}"></span>
         <span class="g greek">${esc(w.g)}</span>
         <span class="e">${esc(w.gloss)} <span style="opacity:.6">(${w.freq ?? "?"})</span></span>
-        <span class="hint-mark">${hasHint(w.id) ? "\u25c9" : ""}</span>
+        <span class="hint-mark">${hasOwnHint(w.id) ? "\u25c9" : ""}</span>
       </button>`).join("");
     view.querySelectorAll(".word-row").forEach(row => row.onclick = () => {
       const w = words.find(x => x.id === row.dataset.id);
