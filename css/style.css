@@ -209,3 +209,8 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
 .tool-label { color: var(--muted); display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
 .hook-input { width: 100%; resize: vertical; min-height: 64px; line-height: 1.45; }
 .btn-inline.wide { width: 100%; }
+
+.hint-note { display: block; }
+.hook-text { display: inline; }
+.hook-say { margin-left: 8px; }
+.hint-note + .hint-note { margin-top: 10px; }

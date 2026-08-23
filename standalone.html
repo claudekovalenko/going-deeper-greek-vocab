@@ -322,6 +322,11 @@ select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
 .tool-label { color: var(--muted); font-family: var(--f-ui); font-weight: 600; display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
 .hook-input { width: 100%; resize: vertical; min-height: 64px; line-height: 1.45; }
 .btn-inline.wide { width: 100%; }
+
+.hint-note { display: block; }
+.hook-text { display: inline; }
+.hook-say { margin-left: 8px; }
+.hint-note + .hint-note { margin-top: 10px; }
 </style>
 
 <header id="topbar">
@@ -584,6 +589,16 @@ function speakGreek(greek) {
   speechSynthesis.speak(u);
 }
 
+// The hooks are English, so they are read plainly rather than respelled.
+function speakEnglish(text) {
+  if (!speechReady() || !text) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = navigator.language || "en-US";
+  u.rate = 0.95;
+  speechSynthesis.speak(u);
+}
+
 // The lexical entry carries parsing info ("θρίξ, τριχός, ἡ"); say the word itself.
 // untilRevealed: on an English-prompt card, hearing the Greek would give the
 // answer away, so the button waits for the flip.
@@ -723,6 +738,22 @@ function hookText(w) {
   const h = hints[w.id] || {};
   return h.mn ?? h.note ?? w.mn ?? "";
 }
+// Each line of the hook text is its own mnemonic, so extras are just new lines.
+function hookLines(w) {
+  return hookText(w).split("\n").map(t => t.trim()).filter(Boolean);
+}
+
+// A ready-made prompt to paste into Claude when a word will not stick.
+function hintPrompt(w) {
+  const lines = hookLines(w);
+  return `I am learning New Testament Greek. Help me remember this word:\n\n` +
+    `Greek: ${w.g}\nMeaning: ${w.gloss}\n` +
+    `Pronounced (Koine): ${translit(headword(w.g), settings.pron || "koine")}\n` +
+    (lines.length ? `\nMnemonics I already have:\n${lines.map(l => "- " + l).join("\n")}\n` : "") +
+    `\nGive me 3 more memory hooks. Base each one on how the word SOUNDS when said aloud: ` +
+    `English words that sound like those syllables, worked into a vivid image that carries the meaning. ` +
+    `Keep each to one or two sentences, and put each on its own line with no numbering.`;
+}
 function hookIsMine(w) {
   const h = hints[w.id] || {};
   return h.mn != null || h.note != null;
@@ -775,32 +806,55 @@ function mountHint(w, allowAdd = true) {
     const h = hints[w.id] || {};
     const url = hintUrl(w.id);
     const mine = hookIsMine(w);
-    const text = hookText(w);
+    const lines = hookLines(w);
     body.innerHTML = `
       ${url ? `<img class="hint-img" alt="Your picture for ${esc(w.g)}" src="${url}">` : ""}
-      ${text ? `<p class="hint-note">${w.icon && !mine ? `<span class="hint-icon">${w.icon}</span>` : ""}${esc(text)}</p>` : ""}
+      ${lines.map((line, i) => `
+        <p class="hint-note">
+          ${i === 0 && w.icon && !mine ? `<span class="hint-icon">${w.icon}</span>` : ""}
+          <span class="hook-text">${esc(line)}</span>
+          <button class="speak-btn speak-sm hook-say" data-line="${i}"
+            aria-label="Hear this mnemonic read aloud" title="Hear this hint">${SPEAKER_ICON}</button>
+        </p>`).join("")}
       ${allowAdd ? `
         <div class="hint-tools">
-          <label class="tool-label" for="my-note">Memory hook — edit it into whatever makes it stick</label>
-          <textarea id="my-note" class="hook-input" rows="3"
-            placeholder="Sounds like…">${esc(text)}</textarea>
+          <label class="tool-label" for="my-note">Mnemonics — one per line, edit or add your own</label>
+          <textarea id="my-note" class="hook-input" rows="4"
+            placeholder="Sounds like\u2026">${esc(hookText(w))}</textarea>
           <div class="hint-tool-row">
-            <button class="btn secondary btn-inline" id="save-note">Save hook</button>
+            <button class="btn secondary btn-inline" id="save-note">Save</button>
             <button class="btn secondary btn-inline" id="pick-pic">${url ? "Change picture" : "Add a picture"}</button>
           </div>
-          ${mine && w.mn ? `<button class="btn secondary btn-inline wide" id="reset-hook">Restore the original hook</button>` : ""}
+          <button class="btn secondary btn-inline wide" id="ask-claude">Copy a prompt to ask Claude for more</button>
+          ${mine && w.mn ? `<button class="btn secondary btn-inline wide" id="reset-hook">Restore the original</button>` : ""}
           <div id="note-fb"></div>
         </div>` : ""}`;
+
+    body.querySelectorAll(".hook-say").forEach(btn => btn.onclick = e => {
+      e.stopPropagation();
+      speakEnglish(lines[+btn.dataset.line]);
+    });
 
     if (!allowAdd) return;
     body.querySelector("#pick-pic").onclick = () => picker.click();
     const noteInput = body.querySelector("#my-note");
-    const commit = async () => {
+    const fb = body.querySelector("#note-fb");
+    body.querySelector("#save-note").onclick = async () => {
       await saveHook(noteInput.value);
       draw();
       body.querySelector("#note-fb").innerHTML = `<div class="feedback ok">Saved.</div>`;
     };
-    body.querySelector("#save-note").onclick = commit;
+    body.querySelector("#ask-claude").onclick = async () => {
+      const text = hintPrompt(w);
+      try {
+        await navigator.clipboard.writeText(text);
+        fb.innerHTML = `<div class="feedback ok">Prompt copied. Paste it into Claude, then paste
+          the mnemonics it gives you into the box above \u2014 one per line.</div>`;
+      } catch {
+        fb.innerHTML = `<div class="feedback ok">Copy this into Claude:</div>
+          <textarea class="hook-input" rows="6" readonly>${esc(text)}</textarea>`;
+      }
+    };
     const reset = body.querySelector("#reset-hook");
     if (reset) reset.onclick = async () => { await resetHook(); draw(); };
   };
