@@ -318,6 +318,10 @@ select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
 .hint-tools { width: 100%; border-top: 1px solid var(--rule); padding-top: 12px; }
 .hint-tool-row { display: flex; gap: 8px; }
 .hint-tool-row .btn { flex: 1; margin-top: 8px; }
+
+.tool-label { color: var(--muted); font-family: var(--f-ui); font-weight: 600; display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+.hook-input { width: 100%; resize: vertical; min-height: 64px; line-height: 1.45; }
+.btn-inline.wide { width: 100%; }
 </style>
 
 <header id="topbar">
@@ -341,7 +345,8 @@ select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
 // ------------------------------------------------------------
 // Each set has: id, source, title, and words.
 // Each word: g (Greek lexical form), gloss (English), freq (NT
-// frequency count from the workbook), tier ('memorize' | 'recognize').
+// frequency count from the workbook), tier ('memorize' | 'recognize'),
+// icon (a symbol shown with the hint) and mn (the built-in memory hook).
 //
 // To add new vocabulary: upload workbook photos to Claude and a
 // new set object gets appended here. Custom sets added in-app are
@@ -709,7 +714,18 @@ function shrinkImage(file, max = 900) {
 // your own layer on top of it.
 function hasOwnHint(id) {
   const h = hints[id];
-  return !!(h && (h.buf || h.note));
+  return !!(h && (h.buf || h.mn || h.note));
+}
+
+// Your edited hook wins; an older personal note counts as one; else the
+// built-in text shipped with the word.
+function hookText(w) {
+  const h = hints[w.id] || {};
+  return h.mn ?? h.note ?? w.mn ?? "";
+}
+function hookIsMine(w) {
+  const h = hints[w.id] || {};
+  return h.mn != null || h.note != null;
 }
 
 function hintMarkup(w, allowAdd = true) {
@@ -743,36 +759,50 @@ function mountHint(w, allowAdd = true) {
     }
   };
 
-  const saveNote = async text => {
+  const saveHook = async text => {
     const h = hints[w.id] || {};
-    await putHint(w.id, { buf: h.buf, type: h.type, note: text.trim() || undefined });
+    // storing under mn retires any older note field for this word
+    await putHint(w.id, { buf: h.buf, type: h.type, mn: text.trim() || undefined });
+  };
+
+  const resetHook = async () => {
+    const h = hints[w.id] || {};
+    if (!h.buf) await removeHint(w.id);
+    else await putHint(w.id, { buf: h.buf, type: h.type });
   };
 
   const draw = () => {
     const h = hints[w.id] || {};
     const url = hintUrl(w.id);
+    const mine = hookIsMine(w);
+    const text = hookText(w);
     body.innerHTML = `
       ${url ? `<img class="hint-img" alt="Your picture for ${esc(w.g)}" src="${url}">` : ""}
-      ${w.mn ? `<p class="hint-note">${w.icon ? `<span class="hint-icon">${w.icon}</span>` : ""}${esc(w.mn)}</p>` : ""}
+      ${text ? `<p class="hint-note">${w.icon && !mine ? `<span class="hint-icon">${w.icon}</span>` : ""}${esc(text)}</p>` : ""}
       ${allowAdd ? `
         <div class="hint-tools">
-          <input type="text" id="my-note" placeholder="Your own reminder — sounds like…" value="${esc(h.note || "")}">
+          <label class="tool-label" for="my-note">Memory hook — edit it into whatever makes it stick</label>
+          <textarea id="my-note" class="hook-input" rows="3"
+            placeholder="Sounds like…">${esc(text)}</textarea>
           <div class="hint-tool-row">
-            <button class="btn secondary btn-inline" id="save-note">Save note</button>
+            <button class="btn secondary btn-inline" id="save-note">Save hook</button>
             <button class="btn secondary btn-inline" id="pick-pic">${url ? "Change picture" : "Add a picture"}</button>
           </div>
+          ${mine && w.mn ? `<button class="btn secondary btn-inline wide" id="reset-hook">Restore the original hook</button>` : ""}
           <div id="note-fb"></div>
-        </div>` : (h.note ? `<p class="hint-note own">${esc(h.note)}</p>` : "")}`;
+        </div>` : ""}`;
 
     if (!allowAdd) return;
     body.querySelector("#pick-pic").onclick = () => picker.click();
     const noteInput = body.querySelector("#my-note");
     const commit = async () => {
-      await saveNote(noteInput.value);
+      await saveHook(noteInput.value);
+      draw();
       body.querySelector("#note-fb").innerHTML = `<div class="feedback ok">Saved.</div>`;
     };
     body.querySelector("#save-note").onclick = commit;
-    noteInput.onkeydown = e => { if (e.key === "Enter") commit(); };
+    const reset = body.querySelector("#reset-hook");
+    if (reset) reset.onclick = async () => { await resetHook(); draw(); };
   };
 
   picker.onchange = savePicture;
@@ -1224,12 +1254,14 @@ function openWordEditor(w) {
     </div>
     <div class="card-panel">
       <h2>Memory hint</h2>
-      <p class="muted">A picture or a phrase that helps the word stick. It stays hidden while you study until you tap \u201cShow hint\u201d.</p>
+      <p class="muted">A picture and a phrase that help the word stick. Both stay hidden while you study until you tap \u201cShow hint\u201d. The hook starts as the one built in \u2014 rewrite it however you like.</p>
       <div id="hint-preview">${url ? `<img class="hint-img" alt="Current hint for ${esc(w.g)}" src="${url}">` : ""}</div>
       <input type="file" id="pic" accept="image/*" hidden>
       <button class="btn secondary" id="pick">${url ? "Replace picture" : "Add a picture"}</button>
-      <input type="text" id="note" placeholder="Note or mnemonic (optional)" value="${esc(h.note || "")}">
+      <label class="tool-label" for="note">Memory hook</label>
+      <textarea id="note" class="hook-input" rows="3" placeholder="Sounds like\u2026">${esc(hookText(w))}</textarea>
       <button class="btn" id="save">Save hint</button>
+      ${hookIsMine(w) && w.mn ? `<button class="btn secondary" id="reset-hook">Restore the original hook</button>` : ""}
       ${hasHint(w.id) ? `<button class="btn secondary" id="clear" style="color:var(--bad)">Remove hint</button>` : ""}
       <div id="hint-fb"></div>
     </div>`;
@@ -1259,20 +1291,30 @@ function openWordEditor(w) {
   };
 
   view.querySelector("#save").onclick = async () => {
-    const note = view.querySelector("#note").value.trim();
+    const text = view.querySelector("#note").value.trim();
     const existing = hints[w.id] || {};
     const buf = pendingBlob ? await pendingBlob.arrayBuffer() : existing.buf || null;
     const type = pendingBlob ? pendingBlob.type : existing.type;
-    if (!buf && !note) {
-      fb.innerHTML = `<div class="feedback no">Add a picture or a note first.</div>`;
+    if (!buf && !text) {
+      fb.innerHTML = `<div class="feedback no">Add a picture or a hook first.</div>`;
       return;
     }
+    // Saving text identical to the built-in leaves the word on the original.
+    const mn = text && text !== w.mn ? text : undefined;
     try {
-      await putHint(w.id, { buf, type, note });
+      await putHint(w.id, { buf, type, mn });
       fb.innerHTML = `<div class="feedback ok">Hint saved.</div>`;
     } catch {
       fb.innerHTML = `<div class="feedback no">Could not save \u2014 this device may be out of storage.</div>`;
     }
+  };
+
+  const resetBtn = view.querySelector("#reset-hook");
+  if (resetBtn) resetBtn.onclick = async () => {
+    const h = hints[w.id] || {};
+    if (!h.buf) await removeHint(w.id);
+    else await putHint(w.id, { buf: h.buf, type: h.type });
+    openWordEditor(w);
   };
 
   const clearBtn = view.querySelector("#clear");
