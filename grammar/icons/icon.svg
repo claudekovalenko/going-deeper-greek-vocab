@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#F7F7FA"/>
+  <rect x="40" y="40" width="14" height="432" fill="#C8102E"/>
+  <text x="270" y="330" font-family="Georgia, serif" font-size="250" font-weight="bold" fill="#1F3F94" text-anchor="middle">Ν</text>
+  <text x="270" y="430" font-family="Georgia, serif" font-size="90" fill="#C8102E" text-anchor="middle">Α</text>
+</svg>
