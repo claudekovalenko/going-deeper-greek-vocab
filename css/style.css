@@ -214,3 +214,5 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
 .hook-text { display: inline; }
 .hook-say { margin-left: 8px; }
 .hint-note + .hint-note { margin-top: 10px; }
+
+.pass-btn { margin-top: 8px; opacity: .85; }

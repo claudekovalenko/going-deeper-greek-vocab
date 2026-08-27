@@ -479,6 +479,21 @@ function grade(id, q) { // q: 0 again, 3 hard, 4 good, 5 easy
   saveProgress();
 }
 
+// Pass parks a word for two months without pretending you graded it. Handy for
+// the recognize tier, where reading it once is the whole job.
+const PASS_DAYS = 60;
+function passWord(id) {
+  const s = getState(id);
+  s.seen++;
+  s.reps = Math.max(s.reps, 3);
+  s.interval = PASS_DAYS;
+  s.ease = Math.max(s.ease, 2.5);
+  s.due = Date.now() + PASS_DAYS * 24 * 60 * 60 * 1000;
+  s.passed = true;
+  progress[id] = s;
+  saveProgress();
+}
+
 function wordStatus(id) {
   const s = progress[id];
   if (!s || s.seen === 0) return "new";
@@ -630,7 +645,8 @@ function renderReview() {
       <button class="btn g-hard">Hard</button>
       <button class="btn g-good">Good</button>
       <button class="btn g-easy">Easy</button>
-    </div>`;
+    </div>
+    <button class="btn secondary pass-btn" id="pass">Pass \u2014 I know this one</button>`;
 
   mountHint(w);
   mountSpeak();
@@ -654,6 +670,13 @@ function renderReview() {
       view.querySelector("#home").onclick = () => show("home");
       return;
     }
+    renderReview();
+  };
+  view.querySelector("#pass").onclick = () => {
+    passWord(w.id);
+    session.queue.shift();
+    session.done++;
+    if (session.done >= session.total && session.queue.length === 0) { session = null; show("home"); return; }
     renderReview();
   };
   view.querySelector(".g-again").onclick = () => gradeAndNext(0);

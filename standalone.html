@@ -327,6 +327,8 @@ select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
 .hook-text { display: inline; }
 .hook-say { margin-left: 8px; }
 .hint-note + .hint-note { margin-top: 10px; }
+
+.pass-btn { margin-top: 8px; text-align: center; }
 </style>
 
 <header id="topbar">
@@ -425,6 +427,70 @@ const VOCAB_SETS = [
       { g: "σχίζω", gloss: "I split, divide, separate, tear apart", freq: 11, tier: "recognize", icon: "✂️", mn: "SKHEE-zo ≈ \"SKIS-oh.\" The skis SPLIT the snow apart." },
       { g: "τρίβος, ἡ", gloss: "path", freq: 3, tier: "recognize", icon: "🛤️", mn: "TREE-vos ≈ \"TREE-VOSS.\" With a V — the PATH runs between the trees." },
       { g: "ὑπόδημα, -ατος, τό", gloss: "sandal", freq: 10, tier: "recognize", icon: "👡", mn: "hew-po-THAY-mah ≈ \"HEW-po-THAY-ma.\" Who put THEM on? The SANDALS." }
+    ]
+  },
+  {
+    id: "gd-set-02",
+    source: "Going Deeper with New Testament Greek",
+    title: "Set 2 — Romans Vocabulary",
+    words: [
+      // ---- Vocabulary to Memorize ----
+      { g: "ἀγρός, ὁ", gloss: "field, country", freq: 36, tier: "memorize", icon: "🌾", mn: "ah-GHROS ≈ \"a GROSS.\" A gross of wheat standing in the FIELD." },
+      { g: "ἀκάθαρτος", gloss: "unclean, impure", freq: 32, tier: "memorize", icon: "🚱", mn: "ah-kah-THAHR-tos ≈ \"a-CATHARTIC-os.\" A cathartic cleanses — and the ἀ- cancels it: UNCLEAN." },
+      { g: "ἀκροβυστία, ἡ", gloss: "uncircumcision", freq: 20, tier: "memorize", icon: "✂️", mn: "ah-kro-VEW-stee-ah ≈ \"ACRO-VIEWS-tee-ah.\" ἄκρον is the tip, left as it was: UNCIRCUMCISION." },
+      { g: "ἀναγινώσκω", gloss: "I read (aloud)", freq: 32, tier: "memorize", icon: "📖", mn: "ah-nah-ghee-NOS-ko ≈ \"ANNA-GHEE-KNOWS-ko.\" Anna knows her letters — she READS it aloud." },
+      { g: "ἄνεμος, ὁ", gloss: "wind", freq: 31, tier: "memorize", icon: "🌬️", mn: "AH-neh-mos ≈ \"an-ANEM-ometer.\" An anemometer measures the WIND." },
+      { g: "ἀρνέομαι", gloss: "I deny, reject", freq: 33, tier: "memorize", icon: "🙅", mn: "ahr-NEH-o-meh ≈ \"ARE? NAY! — o-me.\" Asked, and he says nay: I DENY it." },
+      { g: "βιβλίον, τό", gloss: "book, scroll", freq: 34, tier: "memorize", icon: "📕", mn: "veev-LEE-on ≈ \"a BIBLE with a V.\" The BOOK, the scroll." },
+      { g: "διαθήκη, ἡ", gloss: "covenant, decree, last will and testament", freq: 33, tier: "memorize", icon: "📜", mn: "thee-ah-THAY-kay ≈ \"THEE-a-THEY-kay.\" Thee and they, bound by terms: COVENANT, a last will." },
+      { g: "διακονία, ἡ", gloss: "service, office, ministry, deacon", freq: 34, tier: "memorize", icon: "🍽️", mn: "thee-ah-ko-NEE-ah ≈ \"THEE-a-CONE-ee-ah.\" The DEACON serves thee a cone: MINISTRY." },
+      { g: "δικαιόω", gloss: "I justify, vindicate", freq: 39, tier: "memorize", icon: "⚖️", mn: "thee-KEH-o-o ≈ \"THEE? OKAY-o!\" Declared in the right: JUSTIFY." },
+      { g: "διότι", gloss: "for, because, therefore", freq: 23, tier: "memorize", icon: "➡️", mn: "thee-O-tee ≈ \"THEE-oh-TEA.\" Why? BECAUSE thee wanted tea." },
+      { g: "δυνατός", gloss: "powerful, strong, mighty, able", freq: 32, tier: "memorize", icon: "💪", mn: "thew-nah-TOS ≈ \"THEWS-a-TOSS.\" Thews are sinews — strong enough to toss it: POWERFUL." },
+      { g: "ἐγγύς", gloss: "near, close to", freq: 31, tier: "memorize", icon: "📍", mn: "ehng-GHEWS ≈ \"ANGUISH.\" So close it presses on you: NEAR." },
+      { g: "ἔξεστιν", gloss: "it is lawful, permitted", freq: 31, tier: "memorize", icon: "✅", mn: "ehx-eh-STEEN ≈ \"the EXIT'S-TEEN.\" That exit is allowed: IT IS LAWFUL." },
+      { g: "ἐπίγνωσις, -εως, ἡ", gloss: "knowledge, recognition", freq: 20, tier: "memorize", icon: "💡", mn: "eh-pee-ghno-SEES ≈ \"a-PIGGY-KNOWS-ees.\" What the piggy knows in full: KNOWLEDGE." },
+      { g: "εὐθέως", gloss: "immediately", freq: 36, tier: "memorize", icon: "⚡", mn: "ev-THEH-os ≈ \"EV — THOSE!\" Ev wants those right now: IMMEDIATELY." },
+      { g: "ἐχθρός", gloss: "hostile, hated", freq: 32, tier: "memorize", icon: "⚔️", mn: "ehkh-THROS ≈ \"EXTRA-GROSS.\" Extra gross to you: HOSTILE, hated." },
+      { g: "ἥλιος, ὁ", gloss: "sun", freq: 32, tier: "memorize", icon: "☀️", mn: "HAY-lee-os ≈ \"HELIOS / HELIUM.\" Helium was found in the SUN." },
+      { g: "ἱερεύς, -έως, ὁ", gloss: "priest", freq: 31, tier: "memorize", icon: "🕍", mn: "hee-eh-REVS ≈ \"HIERO-REVS.\" The HIERarch of the temple: the PRIEST." },
+      { g: "καθαρίζω", gloss: "I cleanse, purify", freq: 31, tier: "memorize", icon: "🧼", mn: "kah-thah-REE-zo ≈ \"CATHARSIS-o.\" Catharsis is a washing out: I CLEANSE." },
+      { g: "καταργέω", gloss: "I cancel, nullify, make void", freq: 27, tier: "memorize", icon: "🚫", mn: "kah-tahr-GHEH-o ≈ \"CUT-the-ARGUE-o.\" Cut the argument dead: NULLIFY, make void." },
+      { g: "λογίζομαι", gloss: "I account, reckon, conclude", freq: 40, tier: "memorize", icon: "🧮", mn: "lo-GHEE-zo-meh ≈ \"LOGIC-zo-me.\" I run the logic: I RECKON, I account." },
+      { g: "μέλος, -ους, τό", gloss: "member, part, limb", freq: 34, tier: "memorize", icon: "🦵", mn: "MEH-los ≈ \"MELOS / MELODY.\" A melody has parts, a body has LIMBS: MEMBER." },
+      { g: "ναί", gloss: "yes, certainly, indeed", freq: 33, tier: "memorize", icon: "👍", mn: "NEH ≈ \"NEH.\" Careful — it sounds like our \"nay\" but means the opposite: YES." },
+      { g: "νυνί", gloss: "now", freq: 20, tier: "memorize", icon: "⏱️", mn: "new-NEE ≈ \"NEW-nee.\" What is new is what is NOW." },
+      { g: "ὀργή, ἡ", gloss: "anger, wrath, punishment", freq: 36, tier: "memorize", icon: "😤", mn: "or-GHAY ≈ \"an OAR — GAY?\" No: he swings the oar in fury. ANGER, WRATH." },
+      { g: "οὖς, ὠτός, τό", gloss: "ear, hearing", freq: 36, tier: "memorize", icon: "👂", mn: "OOS ≈ \"OOZE.\" Cup it and listen — the EAR." },
+      { g: "παραγίνομαι", gloss: "I come, arrive, appear", freq: 37, tier: "memorize", icon: "🛬", mn: "pah-rah-ghee-NO-meh ≈ \"PARA-GUY-no-me.\" The parachute guy lands: I ARRIVE." },
+      { g: "παρρησία, ἡ", gloss: "confidence, boldness", freq: 31, tier: "memorize", icon: "🗣️", mn: "pahr-ray-SEE-ah ≈ \"PA-RAISES-ya.\" Pa raises you up to speak: BOLDNESS, confidence." },
+      { g: "περιτομή, ἡ", gloss: "circumcision", freq: 36, tier: "memorize", icon: "✂️", mn: "peh-ree-to-MAY ≈ \"PERI-TOMY.\" Peri- is around, -tomy is a cut: CIRCUMCISION." },
+      { g: "πλήν", gloss: "yet, however, but", freq: 31, tier: "memorize", icon: "↩️", mn: "PLAYN ≈ \"PLAIN.\" Plain and simple — YET, however." },
+      { g: "ποῖος", gloss: "of what kind?", freq: 33, tier: "memorize", icon: "❓", mn: "PEW-os ≈ \"PEW-os.\" What kind of pew is that? OF WHAT KIND?" },
+      { g: "ποτήριον, τό", gloss: "cup", freq: 31, tier: "memorize", icon: "🍷", mn: "po-TAY-ree-on ≈ \"POTTERY-on.\" Pottery is what the CUP is made of." },
+      { g: "ποῦ", gloss: "where?", freq: 48, tier: "memorize", icon: "🧭", mn: "POO ≈ \"POO.\" WHERE did that come from?" },
+      { g: "πτωχός", gloss: "poor", freq: 34, tier: "memorize", icon: "🪙", mn: "pto-KHOS ≈ \"p-TOE-KOSS.\" So poor his toes are through the socks: POOR." },
+      { g: "ὑποστρέφω", gloss: "I turn back, return", freq: 35, tier: "memorize", icon: "🔙", mn: "hew-po-STREH-fo ≈ \"HUE-po-STROPHE-o.\" A strophe is a turn — turn back: RETURN." },
+      { g: "ὑστερέω", gloss: "I fall short of, lack", freq: 16, tier: "memorize", icon: "📉", mn: "hew-steh-REH-o ≈ \"HYSTER-eh-o.\" Hysteros is later — he came in last: I FALL SHORT." },
+      { g: "φανερόω", gloss: "I reveal, make manifest, show", freq: 49, tier: "memorize", icon: "🔦", mn: "fah-neh-RO-o ≈ \"FAN-a-ROW-o.\" The fan blows the cover off the row: I REVEAL." },
+      { g: "Φίλιππος, ὁ", gloss: "Philip", freq: 36, tier: "memorize", icon: "🧑", mn: "FEE-leep-pos ≈ \"PHILIP with an F.\" Philip." },
+      { g: "χωρίς", gloss: "without, apart from", freq: 41, tier: "memorize", icon: "➗", mn: "kho-REES ≈ \"CHORES.\" He did the chores WITHOUT any help: apart from." },
+      // ---- Vocabulary to Recognize (no built-in hook: these are pass-through) ----
+      { g: "ἁμάρτημα, -ατος, τό", gloss: "sin, transgression", freq: 4, tier: "recognize" },
+      { g: "ἀνοχή, ἡ", gloss: "forbearance, tolerance", freq: 2, tier: "recognize" },
+      { g: "ἀπολύτρωσις, -εως, ἡ", gloss: "redemption, release, deliverance", freq: 10, tier: "recognize" },
+      { g: "διαστολή, ἡ", gloss: "distinction, difference", freq: 3, tier: "recognize" },
+      { g: "δωρεάν", gloss: "freely, as a gift, without payment", freq: 9, tier: "recognize" },
+      { g: "εἴπερ", gloss: "if indeed, if perhaps", freq: 6, tier: "recognize" },
+      { g: "ἐκκλείω", gloss: "I exclude, shut out", freq: 2, tier: "recognize" },
+      { g: "ἔνδειξις, ἡ", gloss: "demonstration, proof", freq: 4, tier: "recognize" },
+      { g: "ἱλαστήριον, τό", gloss: "propitiation", freq: 2, tier: "recognize" },
+      { g: "καύχησις, ἡ", gloss: "boasting", freq: 11, tier: "recognize" },
+      { g: "πάρεσις, ἡ", gloss: "passing over", freq: 1, tier: "recognize" },
+      { g: "προγίνομαι", gloss: "it happens before, be done before", freq: 1, tier: "recognize" },
+      { g: "προτίθημι", gloss: "I present, put forward, display publicly", freq: 3, tier: "recognize" },
+      { g: "ὑπόδικος", gloss: "answerable, accountable", freq: 1, tier: "recognize" },
+      { g: "φράσσω", gloss: "I shut, close", freq: 3, tier: "recognize" }
     ]
   }
 ];
@@ -911,6 +977,21 @@ function grade(id, q) { // q: 0 again, 3 hard, 4 good, 5 easy
   saveProgress();
 }
 
+// Pass parks a word for two months without pretending you graded it. Handy for
+// the recognize tier, where reading it once is the whole job.
+const PASS_DAYS = 60;
+function passWord(id) {
+  const s = getState(id);
+  s.seen++;
+  s.reps = Math.max(s.reps, 3);
+  s.interval = PASS_DAYS;
+  s.ease = Math.max(s.ease, 2.5);
+  s.due = Date.now() + PASS_DAYS * 24 * 60 * 60 * 1000;
+  s.passed = true;
+  progress[id] = s;
+  saveProgress();
+}
+
 function wordStatus(id) {
   const s = progress[id];
   if (!s || s.seen === 0) return "new";
@@ -1062,7 +1143,8 @@ function renderReview() {
       <button class="btn g-hard">Hard</button>
       <button class="btn g-good">Good</button>
       <button class="btn g-easy">Easy</button>
-    </div>`;
+    </div>
+    <button class="btn secondary pass-btn" id="pass">Pass \u2014 I know this one</button>`;
 
   mountHint(w);
   mountSpeak();
@@ -1086,6 +1168,13 @@ function renderReview() {
       view.querySelector("#home").onclick = () => show("home");
       return;
     }
+    renderReview();
+  };
+  view.querySelector("#pass").onclick = () => {
+    passWord(w.id);
+    session.queue.shift();
+    session.done++;
+    if (session.done >= session.total && session.queue.length === 0) { session = null; show("home"); return; }
     renderReview();
   };
   view.querySelector(".g-again").onclick = () => gradeAndNext(0);
