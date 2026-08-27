@@ -532,6 +532,35 @@ let settings = store.load(LS_SETTINGS, {
 let customSets = store.load(LS_CUSTOM, []);
 
 function saveProgress() { store.save(LS_PROGRESS, progress); }
+
+// Which tiers are being studied, as a single choice rather than two checkboxes.
+const TIER_MODES = [
+  { id: "both", label: "Both", tiers: { memorize: true, recognize: true } },
+  { id: "memorize", label: "Memorize only", tiers: { memorize: true, recognize: false } },
+  { id: "recognize", label: "Recognize only", tiers: { memorize: false, recognize: true } }
+];
+function tierMode() {
+  const t = settings.tiers || {};
+  return TIER_MODES.find(m => m.tiers.memorize === !!t.memorize && m.tiers.recognize === !!t.recognize)?.id || "both";
+}
+function setTierMode(id) {
+  const m = TIER_MODES.find(x => x.id === id) || TIER_MODES[0];
+  settings.tiers = { ...m.tiers };
+  saveSettings();
+  session = null; deck = null; quiz = null;   // the pool changed, so start clean
+}
+function tierModeMarkup() {
+  const cur = tierMode();
+  return `<div class="pill-row tier-modes" id="tier-modes">
+      ${TIER_MODES.map(m => `<button class="pill ${m.id === cur ? "on" : ""}" data-mode="${m.id}">${m.label}</button>`).join("")}
+    </div>`;
+}
+function mountTierMode(after) {
+  view.querySelectorAll("#tier-modes .pill").forEach(b => b.onclick = () => {
+    setTierMode(b.dataset.mode);
+    after();
+  });
+}
 function saveSettings() { store.save(LS_SETTINGS, settings); }
 
 // ---------------- pronunciation ----------------
@@ -986,17 +1015,12 @@ function grade(id, q) { // q: 0 again, 3 hard, 4 good, 5 easy
   saveProgress();
 }
 
-// Pass parks a word for two months without pretending you graded it. Handy for
-// the recognize tier, where reading it once is the whole job.
-const PASS_DAYS = 60;
-function passWord(id) {
+// Passing is not a claim to know the word — it only means "not now". No
+// interval, no ease, no grade: the word keeps whatever standing it had, and
+// stays unlearned if it was unlearned.
+function skipWord(id) {
   const s = getState(id);
-  s.seen++;
-  s.reps = Math.max(s.reps, 3);
-  s.interval = PASS_DAYS;
-  s.ease = Math.max(s.ease, 2.5);
-  s.due = Date.now() + PASS_DAYS * 24 * 60 * 60 * 1000;
-  s.passed = true;
+  s.skips = (s.skips || 0) + 1;
   progress[id] = s;
   saveProgress();
 }
@@ -1070,6 +1094,14 @@ function renderHome() {
 
   view.innerHTML = `
     <div class="card-panel">
+      <h2>Studying</h2>
+      ${tierModeMarkup()}
+      <p class="muted">${
+        tierMode() === "both" ? "Both tiers are in the deck."
+        : tierMode() === "memorize" ? "Only words to memorize. The recognize list is set aside."
+        : "Only words to recognize."}</p>
+    </div>
+    <div class="card-panel">
       <h2>Today</h2>
       <div class="stat-row">
         <div class="stat"><div class="num">${due}</div><div class="lbl">Due</div></div>
@@ -1095,6 +1127,7 @@ function renderHome() {
       <p class="muted">Upload more workbook pages to Claude and new sets are added here. You can also paste a set in Settings.</p>
     </div>`;
 
+  mountTierMode(renderHome);
   view.querySelector("#go-review").onclick = () => show("review");
   view.querySelector("#go-flash").onclick = () => show("flash");
   view.querySelector("#go-quiz").onclick = () => show("quiz");
@@ -1137,7 +1170,7 @@ function renderReview() {
   view.innerHTML = `
     <div class="review-head">
       <span class="muted">Review ${session.done + 1} / ${session.total}</span>
-      ${canPass ? `<button class="pass-chip" id="pass" title="Park this word for two months">Pass \u203a</button>` : ""}
+      ${canPass ? `<button class="pass-chip" id="pass" title="Skip this one \u2014 nothing is recorded">Pass \u203a</button>` : ""}
     </div>
     <div class="progress-line"><div style="width:${pct}%"></div></div>
     <div class="flashcard-wrap"><div class="flashcard" id="fc">
@@ -1184,7 +1217,7 @@ function renderReview() {
   };
   const passBtn = view.querySelector("#pass");
   if (passBtn) passBtn.onclick = () => {
-    passWord(w.id);
+    skipWord(w.id);
     session.queue.shift();
     session.done++;
     if (session.done >= session.total && session.queue.length === 0) { session = null; show("home"); return; }
@@ -1513,8 +1546,8 @@ function renderSettings() {
     </div>
     <div class="card-panel">
       <h2>Word Tiers</h2>
-      <label class="row"><span>Vocabulary to Memorize</span><input type="checkbox" id="t-mem" ${settings.tiers.memorize ? "checked" : ""}></label>
-      <label class="row"><span>Vocabulary to Recognize</span><input type="checkbox" id="t-rec" ${settings.tiers.recognize ? "checked" : ""}></label>
+      ${tierModeMarkup()}
+      <p class="muted">Also on the Home screen, so you can switch before a session.</p>
     </div>
     <div class="card-panel">
       <h2>Add a Vocabulary Set</h2>
@@ -1566,8 +1599,7 @@ function renderSettings() {
   view.querySelectorAll("#dir .pill").forEach(p => p.onclick = () => {
     settings.direction = p.dataset.d; saveSettings(); renderSettings();
   });
-  view.querySelector("#t-mem").onchange = e => { settings.tiers.memorize = e.target.checked; saveSettings(); };
-  view.querySelector("#t-rec").onchange = e => { settings.tiers.recognize = e.target.checked; saveSettings(); };
+  mountTierMode(renderSettings);
 
   view.querySelector("#add-set").onclick = () => {
     const fb = view.querySelector("#add-fb");
