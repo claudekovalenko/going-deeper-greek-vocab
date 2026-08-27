@@ -235,3 +235,7 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
 .ex-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #232e4d; }
 .ex-row .greek { font-size: 1.05rem; }
 code { font-size: .84em; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+
+.wish-box { width: 100%; margin-top: 8px; }
+.redo-item { padding-bottom: 10px; }
+.wish-inline { min-height: 46px; font-size: .85rem; }

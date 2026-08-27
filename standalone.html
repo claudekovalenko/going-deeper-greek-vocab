@@ -351,6 +351,10 @@ select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
 .ex-row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
 .ex-row .greek { font-size: 1.05rem; }
 code { font-family: var(--f-ui); font-size: .84em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+.wish-box { width: 100%; margin-top: 10px; }
+.redo-item { padding-bottom: 12px; }
+.wish-inline { min-height: 46px; font-size: .85rem; }
 </style>
 
 <header id="topbar">
@@ -875,8 +879,14 @@ function hintPrompt(w) {
 function hookVote(id) { return (hints[id] || {}).vote || 0; }
 async function setHookVote(id, v) {
   const h = hints[id] || {};
-  await putHint(id, { buf: h.buf, type: h.type, mn: h.mn, vote: h.vote === v ? 0 : v });
+  await putHint(id, { buf: h.buf, type: h.type, mn: h.mn, wish: h.wish, vote: h.vote === v ? 0 : v });
 }
+async function setWish(id, text) {
+  const h = hints[id] || {};
+  await putHint(id, { buf: h.buf, type: h.type, mn: h.mn, vote: h.vote, wish: text.trim() || undefined });
+}
+function wishOf(id) { return (hints[id] || {}).wish || ""; }
+
 function dislikedWords() {
   return activeWords().filter(w => hookVote(w.id) === -1);
 }
@@ -906,10 +916,10 @@ function mountHint(w, allowAdd = true) {
     if (!f) return;
     try {
       const blob = await shrinkImage(f);
+      const prev = hints[w.id] || {};
       await putHint(w.id, {
-        buf: await blob.arrayBuffer(),
-        type: blob.type,
-        note: (hints[w.id] || {}).note
+        buf: await blob.arrayBuffer(), type: blob.type,
+        mn: prev.mn, vote: prev.vote, wish: prev.wish, note: prev.note
       });
       show(currentView);                 // redraw this same card, hint included
     } catch (e) {
@@ -920,13 +930,13 @@ function mountHint(w, allowAdd = true) {
   const saveHook = async text => {
     const h = hints[w.id] || {};
     // storing under mn retires any older note field for this word
-    await putHint(w.id, { buf: h.buf, type: h.type, vote: h.vote, mn: text.trim() || undefined });
+    await putHint(w.id, { buf: h.buf, type: h.type, vote: h.vote, wish: h.wish, mn: text.trim() || undefined });
   };
 
   const resetHook = async () => {
     const h = hints[w.id] || {};
     if (!h.buf && !h.vote) await removeHint(w.id);
-    else await putHint(w.id, { buf: h.buf, type: h.type, vote: h.vote });
+    else await putHint(w.id, { buf: h.buf, type: h.type, vote: h.vote, wish: h.wish });
   };
 
   const draw = () => {
@@ -949,7 +959,13 @@ function mountHint(w, allowAdd = true) {
             aria-label="Keep this mnemonic">\u25b3 Keep</button>
           <button class="vote ${hookVote(w.id) === -1 ? "on down" : ""}" id="vote-down"
             aria-label="Ask for a different mnemonic">\u25bd Replace</button>
-        </div>` : ""}
+        </div>
+        ${hookVote(w.id) === -1 ? `
+          <div class="wish-box">
+            <label class="tool-label" for="wish">What would work better? (optional)</label>
+            <textarea id="wish" class="hook-input" rows="2"
+              placeholder="Say or type it \u2014 e.g. tie it to basketball, or use a name I know">${esc(wishOf(w.id))}</textarea>
+          </div>` : ""}` : ""}
       ${allowAdd ? `
         <div class="hint-tools">
           <label class="tool-label" for="my-note">Mnemonics — one per line, edit or add your own</label>
@@ -971,6 +987,8 @@ function mountHint(w, allowAdd = true) {
 
     if (!allowAdd) return;
     const up = body.querySelector("#vote-up"), down = body.querySelector("#vote-down");
+    const wish = body.querySelector("#wish");
+    if (wish) wish.onchange = () => setWish(w.id, wish.value);   // fires on blur, dictation included
     if (up) up.onclick = async () => { await setHookVote(w.id, 1); draw(); };
     if (down) down.onclick = async () => { await setHookVote(w.id, -1); draw(); };
     body.querySelector("#pick-pic").onclick = () => picker.click();
@@ -1475,12 +1493,14 @@ function redoPrompt(words) {
     `- Keep the format: syllables, then \u2248 "ENGLISH-CHAIN", then a short image carrying the meaning.\n` +
     `- Use the ${scheme} sound values already given below.\n` +
     `- Vary your wording; do not reuse the same phrasing across entries.\n\n` +
+    (settings.redoNote ? `What I want overall: ${settings.redoNote}\n\n` : "") +
     `Reply with ONE LINE PER WORD, in exactly this shape, and nothing else:\n` +
     `<greek word> :: <the new mnemonic>\n\n` +
     `Words:\n` +
     words.map(w =>
       `${headword(w.g)} \u2014 "${w.gloss}" \u2014 pronounced ${translit(headword(w.g), scheme)}` +
-      `\n   current (rejected): ${hookText(w)}`).join("\n");
+      `\n   current (rejected): ${hookText(w)}` +
+      (wishOf(w.id) ? `\n   what I asked for: ${wishOf(w.id)}` : "")).join("\n");
 }
 
 // Parse "word :: mnemonic" lines back into hooks, matching accent-insensitively.
@@ -1506,7 +1526,8 @@ function renderRedo() {
       <div class="card-panel" style="margin-top:14px">
         <h3>Nothing marked for replacement</h3>
         <p class="muted">Open a hint while studying and press \u25bd Replace on any mnemonic that is not
-          working. They collect here, and you can have Claude rewrite the whole batch at once.
+          working, and say what would work better. They collect here, and you can have Claude
+          rewrite the whole batch at once.
           Ones you press \u25b3 Keep on, and ones you never touch, are left alone.</p>
       </div>`;
     view.querySelector("#back").onclick = () => show("settings");
@@ -1517,10 +1538,17 @@ function renderRedo() {
     <button class="btn secondary" id="back">\u2190 Back to Settings</button>
     <div class="card-panel" style="margin-top:14px">
       <h2>${words.length} marked for replacement</h2>
-      ${words.map(w => `<div class="ex-row">
-          <span class="greek">${esc(headword(w.g))}</span>
-          <span class="muted">${esc(w.gloss)}</span>
+      ${words.map(w => `<div class="redo-item">
+          <div class="ex-row">
+            <span class="greek">${esc(headword(w.g))}</span>
+            <span class="muted">${esc(w.gloss)}</span>
+          </div>
+          <textarea class="hook-input wish-inline" data-wish="${esc(w.id)}" rows="2"
+            placeholder="What would work better for this one? (optional)">${esc(wishOf(w.id))}</textarea>
         </div>`).join("")}
+      <label class="tool-label" for="batch-note" style="margin-top:14px">One instruction for the whole batch</label>
+      <textarea id="batch-note" class="hook-input" rows="2"
+        placeholder="e.g. keep them short, or lean on sports and food">${esc(settings.redoNote || "")}</textarea>
       <button class="btn" id="copy">Copy the prompt for Claude</button>
       <div id="copy-fb"></div>
     </div>
@@ -1534,6 +1562,10 @@ function renderRedo() {
     </div>`;
 
   view.querySelector("#back").onclick = () => show("settings");
+  view.querySelectorAll("[data-wish]").forEach(t =>
+    t.onchange = () => setWish(t.dataset.wish, t.value));
+  const batch = view.querySelector("#batch-note");
+  batch.onchange = () => { settings.redoNote = batch.value.trim() || undefined; saveSettings(); };
   view.querySelector("#copy").onclick = async () => {
     const text = redoPrompt(words);
     const fb = view.querySelector("#copy-fb");
@@ -1554,7 +1586,8 @@ function renderRedo() {
     }
     for (const { w, hook } of applied) {
       const h = hints[w.id] || {};
-      await putHint(w.id, { buf: h.buf, type: h.type, mn: hook, vote: 0 });  // fresh hook, verdict cleared
+      // fresh hook: verdict and the suggestion that produced it are both spent
+      await putHint(w.id, { buf: h.buf, type: h.type, mn: hook, vote: 0 });
     }
     fb.innerHTML = `<div class="feedback ok">Replaced ${applied.length}
       ${applied.length === 1 ? "mnemonic" : "mnemonics"}.${
