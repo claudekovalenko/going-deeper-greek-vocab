@@ -351,6 +351,16 @@ function hintPrompt(w) {
     `English words that sound like those syllables, worked into a vivid image that carries the meaning. ` +
     `Keep each to one or two sentences, and put each on its own line with no numbering.`;
 }
+// A verdict on the hook: 1 keep it, -1 replace it, 0/absent no opinion.
+function hookVote(id) { return (hints[id] || {}).vote || 0; }
+async function setHookVote(id, v) {
+  const h = hints[id] || {};
+  await putHint(id, { buf: h.buf, type: h.type, mn: h.mn, vote: h.vote === v ? 0 : v });
+}
+function dislikedWords() {
+  return activeWords().filter(w => hookVote(w.id) === -1);
+}
+
 function hookIsMine(w) {
   const h = hints[w.id] || {};
   return h.mn != null || h.note != null;
@@ -390,13 +400,13 @@ function mountHint(w, allowAdd = true) {
   const saveHook = async text => {
     const h = hints[w.id] || {};
     // storing under mn retires any older note field for this word
-    await putHint(w.id, { buf: h.buf, type: h.type, mn: text.trim() || undefined });
+    await putHint(w.id, { buf: h.buf, type: h.type, vote: h.vote, mn: text.trim() || undefined });
   };
 
   const resetHook = async () => {
     const h = hints[w.id] || {};
-    if (!h.buf) await removeHint(w.id);
-    else await putHint(w.id, { buf: h.buf, type: h.type });
+    if (!h.buf && !h.vote) await removeHint(w.id);
+    else await putHint(w.id, { buf: h.buf, type: h.type, vote: h.vote });
   };
 
   const draw = () => {
@@ -413,6 +423,13 @@ function mountHint(w, allowAdd = true) {
           <button class="speak-btn speak-sm hook-say" data-line="${i}"
             aria-label="Hear this mnemonic read aloud" title="Hear this hint">${SPEAKER_ICON}</button>
         </p>`).join("")}
+      ${allowAdd && lines.length ? `
+        <div class="vote-row">
+          <button class="vote ${hookVote(w.id) === 1 ? "on up" : ""}" id="vote-up"
+            aria-label="Keep this mnemonic">\u25b3 Keep</button>
+          <button class="vote ${hookVote(w.id) === -1 ? "on down" : ""}" id="vote-down"
+            aria-label="Ask for a different mnemonic">\u25bd Replace</button>
+        </div>` : ""}
       ${allowAdd ? `
         <div class="hint-tools">
           <label class="tool-label" for="my-note">Mnemonics — one per line, edit or add your own</label>
@@ -433,6 +450,9 @@ function mountHint(w, allowAdd = true) {
     });
 
     if (!allowAdd) return;
+    const up = body.querySelector("#vote-up"), down = body.querySelector("#vote-down");
+    if (up) up.onclick = async () => { await setHookVote(w.id, 1); draw(); };
+    if (down) down.onclick = async () => { await setHookVote(w.id, -1); draw(); };
     body.querySelector("#pick-pic").onclick = () => picker.click();
     const noteInput = body.querySelector("#my-note");
     const fb = body.querySelector("#note-fb");
@@ -569,7 +589,8 @@ function show(name) {
   document.querySelectorAll("#tabbar .tab").forEach(t =>
     t.classList.toggle("active", t.dataset.view === name));
   ({ home: renderHome, review: renderReview, flash: renderFlash,
-     quiz: renderQuiz, browse: renderBrowse, settings: renderSettings }[name])();
+     quiz: renderQuiz, browse: renderBrowse, settings: renderSettings,
+     redo: renderRedo }[name])();
   window.scrollTo(0, 0);
 }
 
@@ -921,6 +942,107 @@ function renderBrowse() {
   draw();
 }
 
+// ---------------- REDO DISLIKED MNEMONICS ----------------
+// Claude cannot be called from inside the page, so the exchange is a prompt out
+// and a paste back. The reply format is one word per line, which is easy for
+// Claude to produce and unambiguous to parse.
+function redoPrompt(words) {
+  const scheme = settings.pron || "koine";
+  return `I am learning New Testament Greek and these mnemonics are not working for me. ` +
+    `Write me a better one for each word.\n\n` +
+    `Rules:\n` +
+    `- Base it on how the word SOUNDS: English words that reproduce those syllables.\n` +
+    `- Keep the format: syllables, then \u2248 "ENGLISH-CHAIN", then a short image carrying the meaning.\n` +
+    `- Use the ${scheme} sound values already given below.\n` +
+    `- Vary your wording; do not reuse the same phrasing across entries.\n\n` +
+    `Reply with ONE LINE PER WORD, in exactly this shape, and nothing else:\n` +
+    `<greek word> :: <the new mnemonic>\n\n` +
+    `Words:\n` +
+    words.map(w =>
+      `${headword(w.g)} \u2014 "${w.gloss}" \u2014 pronounced ${translit(headword(w.g), scheme)}` +
+      `\n   current (rejected): ${hookText(w)}`).join("\n");
+}
+
+// Parse "word :: mnemonic" lines back into hooks, matching accent-insensitively.
+function applyRedo(text, words) {
+  const applied = [], missed = [];
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line || !line.includes("::")) continue;
+    const [lhs, ...rest] = line.split("::");
+    const hook = rest.join("::").trim();
+    if (!hook) continue;
+    const key = norm(lhs.replace(/^[-*\d.\s]+/, ""));
+    const w = words.find(x => norm(headword(x.g)) === key);
+    if (w) applied.push({ w, hook }); else missed.push(lhs.trim());
+  }
+  return { applied, missed };
+}
+
+function renderRedo() {
+  const words = dislikedWords();
+  if (!words.length) {
+    view.innerHTML = `<button class="btn secondary" id="back">\u2190 Back to Settings</button>
+      <div class="card-panel" style="margin-top:14px">
+        <h3>Nothing marked for replacement</h3>
+        <p class="muted">Open a hint while studying and press \u25bd Replace on any mnemonic that is not
+          working. They collect here, and you can have Claude rewrite the whole batch at once.
+          Ones you press \u25b3 Keep on, and ones you never touch, are left alone.</p>
+      </div>`;
+    view.querySelector("#back").onclick = () => show("settings");
+    return;
+  }
+
+  view.innerHTML = `
+    <button class="btn secondary" id="back">\u2190 Back to Settings</button>
+    <div class="card-panel" style="margin-top:14px">
+      <h2>${words.length} marked for replacement</h2>
+      ${words.map(w => `<div class="ex-row">
+          <span class="greek">${esc(headword(w.g))}</span>
+          <span class="muted">${esc(w.gloss)}</span>
+        </div>`).join("")}
+      <button class="btn" id="copy">Copy the prompt for Claude</button>
+      <div id="copy-fb"></div>
+    </div>
+    <div class="card-panel">
+      <h2>Paste Claude's reply</h2>
+      <p class="muted">One line per word, as <code>word :: mnemonic</code>. Anything it does not
+        cover is left as it is.</p>
+      <textarea id="reply" class="hook-input" rows="6" placeholder="\u1F00\u03B3\u03C1\u03CC\u03C2 :: ah-GHROS \u2248 \u2026"></textarea>
+      <button class="btn" id="apply">Apply the replacements</button>
+      <div id="apply-fb"></div>
+    </div>`;
+
+  view.querySelector("#back").onclick = () => show("settings");
+  view.querySelector("#copy").onclick = async () => {
+    const text = redoPrompt(words);
+    const fb = view.querySelector("#copy-fb");
+    try {
+      await navigator.clipboard.writeText(text);
+      fb.innerHTML = `<div class="feedback ok">Copied. Paste it into Claude, then bring the reply back below.</div>`;
+    } catch {
+      fb.innerHTML = `<textarea class="hook-input" rows="6" readonly>${esc(text)}</textarea>`;
+    }
+  };
+  view.querySelector("#apply").onclick = async () => {
+    const { applied, missed } = applyRedo(view.querySelector("#reply").value, words);
+    const fb = view.querySelector("#apply-fb");
+    if (!applied.length) {
+      fb.innerHTML = `<div class="feedback no">No lines matched. Each line needs to be
+        <code>word :: mnemonic</code> with the Greek word on the left.</div>`;
+      return;
+    }
+    for (const { w, hook } of applied) {
+      const h = hints[w.id] || {};
+      await putHint(w.id, { buf: h.buf, type: h.type, mn: hook, vote: 0 });  // fresh hook, verdict cleared
+    }
+    fb.innerHTML = `<div class="feedback ok">Replaced ${applied.length}
+      ${applied.length === 1 ? "mnemonic" : "mnemonics"}.${
+      missed.length ? ` Could not match: ${esc(missed.join(", "))}.` : ""}</div>`;
+    setTimeout(renderRedo, 900);
+  };
+}
+
 // ---------------- WORD EDITOR (attach a hint) ----------------
 function openWordEditor(w) {
   const h = hints[w.id] || {};
@@ -1038,6 +1160,12 @@ function renderSettings() {
       <button class="btn small secondary" id="pron-try">Hear the sample</button>
     </div>
     <div class="card-panel">
+      <h2>Mnemonics</h2>
+      <p class="muted">Press \u25b3 Keep or \u25bd Replace on any hint while studying. Ones marked
+        Replace collect here so Claude can rewrite them in one go.</p>
+      <button class="btn secondary" id="go-redo">Replace the ones I disliked (${dislikedWords().length})</button>
+    </div>
+    <div class="card-panel">
       <h2>Word Tiers</h2>
       ${tierModeMarkup()}
       <p class="muted">Also on the Home screen, so you can switch before a session.</p>
@@ -1093,6 +1221,7 @@ function renderSettings() {
     settings.direction = p.dataset.d; saveSettings(); renderSettings();
   });
   mountTierMode(renderSettings);
+  view.querySelector("#go-redo").onclick = () => show("redo");
 
   view.querySelector("#add-set").onclick = () => {
     const fb = view.querySelector("#add-fb");

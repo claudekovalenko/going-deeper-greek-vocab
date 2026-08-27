@@ -224,3 +224,14 @@ textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: va
   letter-spacing: .06em; text-transform: uppercase; cursor: pointer;
 }
 .pass-chip:active { transform: scale(.95); }
+
+.vote-row { display: flex; gap: 8px; width: 100%; justify-content: center; margin-top: 4px; }
+.vote {
+  background: none; color: var(--muted); border: 1px solid #2b3757;
+  border-radius: 999px; padding: 6px 14px; font-size: .74rem; font-weight: 600; cursor: pointer;
+}
+.vote.on.up { color: var(--good); border-color: var(--good); }
+.vote.on.down { color: var(--bad); border-color: var(--bad); }
+.ex-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #232e4d; }
+.ex-row .greek { font-size: 1.05rem; }
+code { font-size: .84em; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }

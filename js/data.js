@@ -23,7 +23,7 @@ const VOCAB_SETS = [
       { g: "ἄρα", gloss: "so, then, consequently", freq: 49, tier: "memorize", icon: "➡️", mn: "AH-rah ≈ \"AH — RAH!\" The cheer once the point lands: SO, THEN." },
       { g: "ἄφεσις, -εως, ἡ", gloss: "forgiveness", freq: 17, tier: "memorize", icon: "🕊️", mn: "ah-FEH-sees ≈ \"a-FESS-sis.\" Fess up, sis — and it is FORGIVEN." },
       { g: "ἄχρι", gloss: "until (conj. or prep. + gen.)", freq: 49, tier: "memorize", icon: "⏳", mn: "AH-khree ≈ \"a CRY\" (rasped: kh). You cry UNTIL it is over." },
-      { g: "βάπτισμα, -ατος, τό", gloss: "baptism", freq: 19, tier: "memorize", icon: "💧", mn: "VAHP-tees-mah ≈ \"VOP-TEASE-ma.\" With a V: they dunk him under. BAPTISM." },
+      { g: "βάπτισμα, -ατος, τό", gloss: "baptism", freq: 19, tier: "memorize", icon: "💧", mn: "VAHP-tees-mah ≈ \"VOP-TEASE-ma.\" They whop him under the water: BAPTISM." },
       { g: "δεύτερος", gloss: "second", freq: 43, tier: "memorize", icon: "2️⃣", mn: "THEV-teh-ros ≈ \"THE-VET-ROSE.\" The vet rose in SECOND place." },
       { g: "διακονέω", gloss: "I serve", freq: 37, tier: "memorize", icon: "🍽️", mn: "thee-ah-ko-NEH-o ≈ \"THEE-a-CONE-oh.\" A cone for thee: I SERVE." },
       { g: "διέρχομαι", gloss: "I go through, cross over", freq: 43, tier: "memorize", icon: "🚶", mn: "thee-EHR-kho-meh ≈ \"THE-AIR-I-COMB.\" You comb right THROUGH the air." },
@@ -61,7 +61,7 @@ const VOCAB_SETS = [
       // ---- Vocabulary to Recognize ----
       { g: "ἄγριος", gloss: "wild", freq: 3, tier: "recognize", icon: "🌿", mn: "AH-ghree-os ≈ \"ANGRY-os.\" Angry and untamed: WILD." },
       { g: "ἀκρίς, -ίδος, ἡ", gloss: "locust", freq: 4, tier: "recognize", icon: "🦗", mn: "ah-KREES ≈ \"a-CREASE.\" The locusts eat a crease across the field: LOCUST." },
-      { g: "βοάω", gloss: "I call, shout, cry out", freq: 12, tier: "recognize", icon: "📣", mn: "vo-AH-o ≈ \"a VOW — AH — OH!\" With a V, and every syllable a shout: he CRIES OUT." },
+      { g: "βοάω", gloss: "I call, shout, cry out", freq: 12, tier: "recognize", icon: "📣", mn: "vo-AH-o ≈ \"a VOW — AH — OH!\" Every syllable of it is a shout: he CRIES OUT." },
       { g: "δερμάτινος", gloss: "(made of) leather", freq: 2, tier: "recognize", icon: "🧥", mn: "thehr-mah-TEE-nos ≈ \"THERMAL-TEE-nos.\" A thermal tee made of LEATHER." },
       { g: "ἐξομολογέω", gloss: "I confess, admit", freq: 10, tier: "recognize", icon: "🙏", mn: "ehx-o-mo-lo-GHEH-o ≈ \"EGGS-o-mo-lo-GAY-o.\" He logs it all out loud: CONFESS." },
       { g: "εὐθύς", gloss: "straight", freq: 8, tier: "recognize", icon: "📏", mn: "ev-THEWS ≈ \"EV — THOSE!\" Ev sends those STRAIGHT ahead." },
@@ -76,7 +76,7 @@ const VOCAB_SETS = [
       { g: "ὀσφῦς, ἡ", gloss: "waist", freq: 8, tier: "recognize", icon: "🧍", mn: "os-FEWS ≈ \"OS-FEWS.\" The few bones at your WAIST." },
       { g: "περιστερά, ἡ", gloss: "dove, pigeon", freq: 10, tier: "recognize", icon: "🕊️", mn: "peh-ree-steh-RAH ≈ \"PERRY'S-STAIR-ah.\" A DOVE settles on Perry's stair." },
       { g: "σχίζω", gloss: "I split, divide, separate, tear apart", freq: 11, tier: "recognize", icon: "✂️", mn: "SKHEE-zo ≈ \"SKIS-oh.\" The skis SPLIT the snow apart." },
-      { g: "τρίβος, ἡ", gloss: "path", freq: 3, tier: "recognize", icon: "🛤️", mn: "TREE-vos ≈ \"TREE-VOSS.\" With a V — the PATH runs between the trees." },
+      { g: "τρίβος, ἡ", gloss: "path", freq: 3, tier: "recognize", icon: "🛤️", mn: "TREE-vos ≈ \"TREE-VOSS.\" The PATH worn between the trees." },
       { g: "ὑπόδημα, -ατος, τό", gloss: "sandal", freq: 10, tier: "recognize", icon: "👡", mn: "hew-po-THAY-mah ≈ \"HEW-po-THAY-ma.\" Who put THEM on? The SANDALS." }
     ]
   },
@@ -92,7 +92,7 @@ const VOCAB_SETS = [
       { g: "ἀναγινώσκω", gloss: "I read (aloud)", freq: 32, tier: "memorize", icon: "📖", mn: "ah-nah-ghee-NOS-ko ≈ \"ANNA-GHEE-KNOWS-ko.\" Anna knows her letters — she READS it aloud." },
       { g: "ἄνεμος, ὁ", gloss: "wind", freq: 31, tier: "memorize", icon: "🌬️", mn: "AH-neh-mos ≈ \"an-ANEM-ometer.\" An anemometer measures the WIND." },
       { g: "ἀρνέομαι", gloss: "I deny, reject", freq: 33, tier: "memorize", icon: "🙅", mn: "ahr-NEH-o-meh ≈ \"ARE? NAY! — o-me.\" Asked, and he says nay: I DENY it." },
-      { g: "βιβλίον, τό", gloss: "book, scroll", freq: 34, tier: "memorize", icon: "📕", mn: "veev-LEE-on ≈ \"a BIBLE with a V.\" The BOOK, the scroll." },
+      { g: "βιβλίον, τό", gloss: "book, scroll", freq: 34, tier: "memorize", icon: "📕", mn: "veev-LEE-on ≈ \"VEEV-lee-on.\" Our word BIBLE, softened: the BOOK, the scroll." },
       { g: "διαθήκη, ἡ", gloss: "covenant, decree, last will and testament", freq: 33, tier: "memorize", icon: "📜", mn: "thee-ah-THAY-kay ≈ \"THEE-a-THEY-kay.\" Thee and they, bound by terms: COVENANT, a last will." },
       { g: "διακονία, ἡ", gloss: "service, office, ministry, deacon", freq: 34, tier: "memorize", icon: "🍽️", mn: "thee-ah-ko-NEE-ah ≈ \"THEE-a-CONE-ee-ah.\" The DEACON serves thee a cone: MINISTRY." },
       { g: "δικαιόω", gloss: "I justify, vindicate", freq: 39, tier: "memorize", icon: "⚖️", mn: "thee-KEH-o-o ≈ \"THEE? OKAY-o!\" Declared in the right: JUSTIFY." },
