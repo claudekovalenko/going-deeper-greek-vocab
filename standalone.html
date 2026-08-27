@@ -328,7 +328,16 @@ select { width: auto; margin-top: 0; padding: 7px 9px; font-size: .82rem; }
 .hook-say { margin-left: 8px; }
 .hint-note + .hint-note { margin-top: 10px; }
 
-.pass-btn { margin-top: 8px; text-align: center; }
+
+.review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pass-chip {
+  flex: none; background: none; color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 999px;
+  padding: 5px 12px; font-family: var(--f-ui); font-size: .66rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+}
+.pass-chip:hover { border-color: var(--lapis); color: var(--lapis); }
+.pass-chip:active { transform: scale(.95); }
 </style>
 
 <header id="topbar">
@@ -1124,8 +1133,12 @@ function renderReview() {
   const back = dir === "g2e" ? `<div class="fc-gloss">${esc(w.gloss)}</div>` : `<div class="fc-word greek">${esc(w.g)}</div>`;
   const pct = Math.round(session.done / session.total * 100);
 
+  const canPass = w.tier === "recognize";
   view.innerHTML = `
-    <div class="muted">Review ${session.done + 1} / ${session.total}</div>
+    <div class="review-head">
+      <span class="muted">Review ${session.done + 1} / ${session.total}</span>
+      ${canPass ? `<button class="pass-chip" id="pass" title="Park this word for two months">Pass \u203a</button>` : ""}
+    </div>
     <div class="progress-line"><div style="width:${pct}%"></div></div>
     <div class="flashcard-wrap"><div class="flashcard" id="fc">
       <div class="fc-face">
@@ -1143,8 +1156,7 @@ function renderReview() {
       <button class="btn g-hard">Hard</button>
       <button class="btn g-good">Good</button>
       <button class="btn g-easy">Easy</button>
-    </div>
-    <button class="btn secondary pass-btn" id="pass">Pass \u2014 I know this one</button>`;
+    </div>`;
 
   mountHint(w);
   mountSpeak();
@@ -1170,7 +1182,8 @@ function renderReview() {
     }
     renderReview();
   };
-  view.querySelector("#pass").onclick = () => {
+  const passBtn = view.querySelector("#pass");
+  if (passBtn) passBtn.onclick = () => {
     passWord(w.id);
     session.queue.shift();
     session.done++;

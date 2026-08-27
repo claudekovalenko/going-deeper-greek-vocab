@@ -626,8 +626,12 @@ function renderReview() {
   const back = dir === "g2e" ? `<div class="fc-gloss">${esc(w.gloss)}</div>` : `<div class="fc-word greek">${esc(w.g)}</div>`;
   const pct = Math.round(session.done / session.total * 100);
 
+  const canPass = w.tier === "recognize";
   view.innerHTML = `
-    <div class="muted">Review ${session.done + 1} / ${session.total}</div>
+    <div class="review-head">
+      <span class="muted">Review ${session.done + 1} / ${session.total}</span>
+      ${canPass ? `<button class="pass-chip" id="pass" title="Park this word for two months">Pass \u203a</button>` : ""}
+    </div>
     <div class="progress-line"><div style="width:${pct}%"></div></div>
     <div class="flashcard-wrap"><div class="flashcard" id="fc">
       <div class="fc-face">
@@ -645,8 +649,7 @@ function renderReview() {
       <button class="btn g-hard">Hard</button>
       <button class="btn g-good">Good</button>
       <button class="btn g-easy">Easy</button>
-    </div>
-    <button class="btn secondary pass-btn" id="pass">Pass \u2014 I know this one</button>`;
+    </div>`;
 
   mountHint(w);
   mountSpeak();
@@ -672,7 +675,8 @@ function renderReview() {
     }
     renderReview();
   };
-  view.querySelector("#pass").onclick = () => {
+  const passBtn = view.querySelector("#pass");
+  if (passBtn) passBtn.onclick = () => {
     passWord(w.id);
     session.queue.shift();
     session.done++;
