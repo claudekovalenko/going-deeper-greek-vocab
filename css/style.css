@@ -156,7 +156,7 @@ input[type="text"], select {
 .feedback.no { background: rgba(248,113,113,.15); color: var(--bad); }
 
 label.row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; font-size: .95rem; }
-textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: var(--text); border: 1px solid #2b3757; border-radius: 10px; padding: 10px; font-size: .85rem; margin-top: 8px; }
+textarea { width: 100%; min-height: 120px; background: var(--panel-2); color: var(--text); border: 1px solid #2b3757; border-radius: 10px; padding: 10px; font-size: 16px; margin-top: 8px; }
 
 /* ---- memory hints ---- */
 .hint-zone { margin: 10px 0 0; }
@@ -238,4 +238,9 @@ code { font-size: .84em; background: var(--panel-2); padding: 1px 5px; border-ra
 
 .wish-box { width: 100%; margin-top: 8px; }
 .redo-item { padding-bottom: 10px; }
-.wish-inline { min-height: 46px; font-size: .85rem; }
+.wish-inline { min-height: 46px; }
+
+/* iOS zooms in on any focused field smaller than 16px, which yanks the layout
+   around mid-edit. Every text field stays at 16px so tapping one is inert. */
+textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
+.hook-input, .wish-inline { font-size: 16px; }

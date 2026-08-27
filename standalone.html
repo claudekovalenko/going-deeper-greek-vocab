@@ -219,7 +219,7 @@ input[type="text"], select, textarea {
   font-family: var(--f-ui); font-size: 1rem;
 }
 input[type="text"].greek { font-family: var(--f-greek); font-size: 1.2rem; }
-textarea { min-height: 110px; font-size: .8rem; line-height: 1.5; }
+textarea { min-height: 110px; font-size: 16px; line-height: 1.5; }
 
 /* ---- word list ---- */
 .word-row {
@@ -354,7 +354,12 @@ code { font-family: var(--f-ui); font-size: .84em; background: var(--surface-2);
 
 .wish-box { width: 100%; margin-top: 10px; }
 .redo-item { padding-bottom: 12px; }
-.wish-inline { min-height: 46px; font-size: .85rem; }
+.wish-inline { min-height: 46px; }
+
+/* iOS zooms in on any focused field smaller than 16px, which yanks the layout
+   around mid-edit. Every text field stays at 16px so tapping one is inert. */
+textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
+.hook-input, .wish-inline { font-size: 16px; }
 </style>
 
 <header id="topbar">
