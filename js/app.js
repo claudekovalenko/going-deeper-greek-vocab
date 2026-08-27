@@ -1019,8 +1019,13 @@ function renderRedo() {
             <span class="greek">${esc(headword(w.g))}</span>
             <span class="muted">${esc(w.gloss)}</span>
           </div>
+          <p class="redo-current">
+            <span class="redo-tag">${hookIsMine(w) ? "your version" : "built in"}</span>
+            ${esc(hookText(w)) || "<em>no mnemonic yet</em>"}
+          </p>
           <textarea class="hook-input wish-inline" data-wish="${esc(w.id)}" rows="2"
             placeholder="What would work better for this one? (optional)">${esc(wishOf(w.id))}</textarea>
+          <button class="btn secondary btn-inline" data-unmark="${esc(w.id)}">Keep this one after all</button>
         </div>`).join("")}
       <label class="tool-label" for="batch-note" style="margin-top:14px">One instruction for the whole batch</label>
       <textarea id="batch-note" class="hook-input" rows="2"
@@ -1040,6 +1045,10 @@ function renderRedo() {
   view.querySelector("#back").onclick = () => show("settings");
   view.querySelectorAll("[data-wish]").forEach(t =>
     t.onchange = () => setWish(t.dataset.wish, t.value));
+  view.querySelectorAll("[data-unmark]").forEach(btn => btn.onclick = async () => {
+    await setHookVote(btn.dataset.unmark, -1);   // toggles the -1 back off
+    renderRedo();
+  });
   const batch = view.querySelector("#batch-note");
   batch.onchange = () => { settings.redoNote = batch.value.trim() || undefined; saveSettings(); };
   view.querySelector("#copy").onclick = async () => {

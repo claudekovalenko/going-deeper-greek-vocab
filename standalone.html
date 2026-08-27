@@ -360,6 +360,17 @@ code { font-family: var(--f-ui); font-size: .84em; background: var(--surface-2);
    around mid-edit. Every text field stays at 16px so tapping one is inert. */
 textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
 .hook-input, .wish-inline { font-size: 16px; }
+
+.redo-current {
+  font-family: var(--f-disp); font-size: .96rem; line-height: 1.5; margin: 8px 0 4px;
+  padding: 10px 12px; background: var(--surface-2); border-radius: var(--r);
+}
+.redo-tag {
+  display: block; font-family: var(--f-ui); font-size: .58rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .13em; color: var(--muted); margin-bottom: 5px;
+}
+.redo-item { border-bottom: 1px solid var(--rule); padding-bottom: 14px; margin-bottom: 14px; }
+.redo-item:last-of-type { border-bottom: none; }
 </style>
 
 <header id="topbar">
@@ -1548,8 +1559,13 @@ function renderRedo() {
             <span class="greek">${esc(headword(w.g))}</span>
             <span class="muted">${esc(w.gloss)}</span>
           </div>
+          <p class="redo-current">
+            <span class="redo-tag">${hookIsMine(w) ? "your version" : "built in"}</span>
+            ${esc(hookText(w)) || "<em>no mnemonic yet</em>"}
+          </p>
           <textarea class="hook-input wish-inline" data-wish="${esc(w.id)}" rows="2"
             placeholder="What would work better for this one? (optional)">${esc(wishOf(w.id))}</textarea>
+          <button class="btn secondary btn-inline" data-unmark="${esc(w.id)}">Keep this one after all</button>
         </div>`).join("")}
       <label class="tool-label" for="batch-note" style="margin-top:14px">One instruction for the whole batch</label>
       <textarea id="batch-note" class="hook-input" rows="2"
@@ -1569,6 +1585,10 @@ function renderRedo() {
   view.querySelector("#back").onclick = () => show("settings");
   view.querySelectorAll("[data-wish]").forEach(t =>
     t.onchange = () => setWish(t.dataset.wish, t.value));
+  view.querySelectorAll("[data-unmark]").forEach(btn => btn.onclick = async () => {
+    await setHookVote(btn.dataset.unmark, -1);   // toggles the -1 back off
+    renderRedo();
+  });
   const batch = view.querySelector("#batch-note");
   batch.onchange = () => { settings.redoNote = batch.value.trim() || undefined; saveSettings(); };
   view.querySelector("#copy").onclick = async () => {

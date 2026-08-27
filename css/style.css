@@ -244,3 +244,14 @@ code { font-size: .84em; background: var(--panel-2); padding: 1px 5px; border-ra
    around mid-edit. Every text field stays at 16px so tapping one is inert. */
 textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
 .hook-input, .wish-inline { font-size: 16px; }
+
+.redo-current {
+  font-size: .92rem; line-height: 1.5; margin: 8px 0 4px;
+  padding: 10px 12px; background: var(--panel-2); border-radius: 10px;
+}
+.redo-tag {
+  display: block; font-size: .6rem; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--muted); margin-bottom: 4px;
+}
+.redo-item { border-bottom: 1px solid #232e4d; padding-bottom: 14px; margin-bottom: 14px; }
+.redo-item:last-of-type { border-bottom: none; }
