@@ -19,13 +19,13 @@ const VOCAB_SETS = [
     words: [
       // ---- Vocabulary to Memorize ----
       { g: "ἀπαγγέλλω", gloss: "I announce, proclaim, report", freq: 45, tier: "memorize", icon: "📢", mn: "ah-pahng-GHEHL-lo ≈ \"a PANG — hard-G HELLO!\" A pang, then you hail everyone: ANNOUNCE." },
-      { g: "ἀποδίδωμι", gloss: "I give away, pay, return", freq: 48, tier: "memorize", icon: "💰", mn: "ah-po-THEE-tho-mee ≈ \"APOTHE-tho-me.\" The apothecary hands it back TO ME: PAY UP." },
+      { g: "ἀποδίδωμι", gloss: "I give away, pay, return", freq: 48, tier: "memorize", icon: "💰", mn: "ah-po-THEE-tho-mee ≈ \"APOTHE-tho-me.\" ἀπό (back) + δίδωμι (give): PAY IT BACK." },
       { g: "ἄρα", gloss: "so, then, consequently", freq: 49, tier: "memorize", icon: "➡️", mn: "AH-rah ≈ \"AH — RAH!\" The cheer once the point lands: SO, THEN." },
       { g: "ἄφεσις, -εως, ἡ", gloss: "forgiveness", freq: 17, tier: "memorize", icon: "🕊️", mn: "ah-FEH-sees ≈ \"a-FESS-sis.\" Fess up, sis — and it is FORGIVEN." },
       { g: "ἄχρι", gloss: "until (conj. or prep. + gen.)", freq: 49, tier: "memorize", icon: "⏳", mn: "AH-khree ≈ \"a CRY\" (rasped: kh). You cry UNTIL it is over." },
-      { g: "βάπτισμα, -ατος, τό", gloss: "baptism", freq: 19, tier: "memorize", icon: "💧", mn: "VAHP-tees-mah ≈ \"VOP-TEASE-ma.\" They whop him under the water: BAPTISM." },
-      { g: "δεύτερος", gloss: "second", freq: 43, tier: "memorize", icon: "2️⃣", mn: "THEV-teh-ros ≈ \"THE-VET-ROSE.\" The vet rose in SECOND place." },
-      { g: "διακονέω", gloss: "I serve", freq: 37, tier: "memorize", icon: "🍽️", mn: "thee-ah-ko-NEH-o ≈ \"THEE-a-CONE-oh.\" A cone for thee: I SERVE." },
+      { g: "βάπτισμα, -ατος, τό", gloss: "baptism", freq: 19, tier: "memorize", icon: "💧", mn: "VAHP-tees-mah ≈ \"VOP-TEASE-ma.\" Spelled βαπτ-, our BAPTISM — Koine β says \"v\"." },
+      { g: "δεύτερος", gloss: "second", freq: 43, tier: "memorize", icon: "2️⃣", mn: "THEV-teh-ros ≈ \"THE-VET-ROSE.\" Spelled δευτ-, our DEUTERONOMY: the SECOND law." },
+      { g: "διακονέω", gloss: "I serve", freq: 37, tier: "memorize", icon: "🍽️", mn: "thee-ah-ko-NEH-o ≈ \"THEE-a-CONE-oh.\" Spelled δ, our DEACON — but Koine δ says \"th\": I SERVE." },
       { g: "διέρχομαι", gloss: "I go through, cross over", freq: 43, tier: "memorize", icon: "🚶", mn: "thee-EHR-kho-meh ≈ \"THE-AIR-I-COMB.\" You comb right THROUGH the air." },
       { g: "ἐκπορεύομαι", gloss: "I go out, come out", freq: 33, tier: "memorize", icon: "🚪", mn: "ehk-po-REV-o-meh ≈ \"ECK-po-REV-o-me.\" Rev it up and GO OUT." },
       { g: "ἐνδύω", gloss: "I clothe myself, put on, wear", freq: 27, tier: "memorize", icon: "👕", mn: "ehn-THEW-o ≈ \"EN-THOU-oh.\" En-thou: you get INTO it — PUT ON your coat." },
@@ -39,7 +39,7 @@ const VOCAB_SETS = [
       { g: "θλῖψις, -εως, ἡ", gloss: "tribulation, affliction, oppression", freq: 45, tier: "memorize", icon: "😰", mn: "THLEEP-sees ≈ \"the-LIPS-SEIZE.\" The lips seize under the pressure: TRIBULATION." },
       { g: "θρίξ, τριχός, ἡ", gloss: "hair", freq: 15, tier: "memorize", icon: "💇", mn: "THREEX ≈ \"THREE-X.\" Three strands of HAIR crossed in an X." },
       { g: "ἱκανός", gloss: "qualified, able", freq: 39, tier: "memorize", icon: "✅", mn: "hee-kah-NOS ≈ \"HE-CAN-nose.\" He can do it — he is ABLE." },
-      { g: "Ἰορδάνης, -ου, ὁ", gloss: "the Jordan", freq: 15, tier: "memorize", icon: "🏞️", mn: "ee-or-THAH-nays ≈ \"YOUR-THAW-nays.\" Your thaw feeds the JORDAN." },
+      { g: "Ἰορδάνης, -ου, ὁ", gloss: "the Jordan", freq: 15, tier: "memorize", icon: "🏞️", mn: "ee-or-THAH-nays ≈ \"YOUR-THAW-nays.\" Spelled Ἰορδ-, the JORDAN, its δ sounding \"th\"." },
       { g: "ἰσχυρός", gloss: "strong, mighty, powerful", freq: 29, tier: "memorize", icon: "💪", mn: "ees-KHEW-ros ≈ \"EASE-CUE-rose.\" On cue he rose — that is STRONG." },
       { g: "καθίζω", gloss: "I cause to sit down, appoint", freq: 46, tier: "memorize", icon: "🪑", mn: "kah-THEE-zo ≈ \"CATHY'S-oh.\" Cathy, oh — SIT DOWN." },
       { g: "κρατέω", gloss: "I grasp, hold (fast), arrest", freq: 47, tier: "memorize", icon: "✊", mn: "krah-TEH-o ≈ \"a-CRATE-oh.\" Grab the crate and HOLD it fast." },
@@ -62,7 +62,7 @@ const VOCAB_SETS = [
       { g: "ἄγριος", gloss: "wild", freq: 3, tier: "recognize", icon: "🌿", mn: "AH-ghree-os ≈ \"ANGRY-os.\" Angry and untamed: WILD." },
       { g: "ἀκρίς, -ίδος, ἡ", gloss: "locust", freq: 4, tier: "recognize", icon: "🦗", mn: "ah-KREES ≈ \"a-CREASE.\" The locusts eat a crease across the field: LOCUST." },
       { g: "βοάω", gloss: "I call, shout, cry out", freq: 12, tier: "recognize", icon: "📣", mn: "vo-AH-o ≈ \"a VOW — AH — OH!\" Every syllable of it is a shout: he CRIES OUT." },
-      { g: "δερμάτινος", gloss: "(made of) leather", freq: 2, tier: "recognize", icon: "🧥", mn: "thehr-mah-TEE-nos ≈ \"THERMAL-TEE-nos.\" A thermal tee made of LEATHER." },
+      { g: "δερμάτινος", gloss: "(made of) leather", freq: 2, tier: "recognize", icon: "🧥", mn: "thehr-mah-TEE-nos ≈ \"THERMAL-TEE-nos.\" Spelled δερμ-, our DERMATOLOGY — skin, so (made of) LEATHER." },
       { g: "ἐξομολογέω", gloss: "I confess, admit", freq: 10, tier: "recognize", icon: "🙏", mn: "ehx-o-mo-lo-GHEH-o ≈ \"EGGS-o-mo-lo-GAY-o.\" He logs it all out loud: CONFESS." },
       { g: "εὐθύς", gloss: "straight", freq: 8, tier: "recognize", icon: "📏", mn: "ev-THEWS ≈ \"EV — THOSE!\" Ev sends those STRAIGHT ahead." },
       { g: "ζώνη, ἡ", gloss: "belt", freq: 8, tier: "recognize", icon: "🎽", mn: "ZO-nay ≈ \"a ZONE-ay.\" The BELT is the zone around your waist." },
@@ -77,7 +77,7 @@ const VOCAB_SETS = [
       { g: "περιστερά, ἡ", gloss: "dove, pigeon", freq: 10, tier: "recognize", icon: "🕊️", mn: "peh-ree-steh-RAH ≈ \"PERRY'S-STAIR-ah.\" A DOVE settles on Perry's stair." },
       { g: "σχίζω", gloss: "I split, divide, separate, tear apart", freq: 11, tier: "recognize", icon: "✂️", mn: "SKHEE-zo ≈ \"SKIS-oh.\" The skis SPLIT the snow apart." },
       { g: "τρίβος, ἡ", gloss: "path", freq: 3, tier: "recognize", icon: "🛤️", mn: "TREE-vos ≈ \"TREE-VOSS.\" The PATH worn between the trees." },
-      { g: "ὑπόδημα, -ατος, τό", gloss: "sandal", freq: 10, tier: "recognize", icon: "👡", mn: "hew-po-THAY-mah ≈ \"HEW-po-THAY-ma.\" Who put THEM on? The SANDALS." }
+      { g: "ὑπόδημα, -ατος, τό", gloss: "sandal", freq: 10, tier: "recognize", icon: "👡", mn: "hew-po-THAY-mah ≈ \"HEW-po-THAY-ma.\" ὑπό (under) + δέω (bind) — bound under the foot: SANDAL." }
     ]
   },
   {
@@ -94,10 +94,10 @@ const VOCAB_SETS = [
       { g: "ἀρνέομαι", gloss: "I deny, reject", freq: 33, tier: "memorize", icon: "🙅", mn: "ahr-NEH-o-meh ≈ \"ARE? NAY! — o-me.\" Asked, and he says nay: I DENY it." },
       { g: "βιβλίον, τό", gloss: "book, scroll", freq: 34, tier: "memorize", icon: "📕", mn: "veev-LEE-on ≈ \"VEEV-lee-on.\" Our word BIBLE, softened: the BOOK, the scroll." },
       { g: "διαθήκη, ἡ", gloss: "covenant, decree, last will and testament", freq: 33, tier: "memorize", icon: "📜", mn: "thee-ah-THAY-kay ≈ \"THEE-a-THEY-kay.\" Thee and they, bound by terms: COVENANT, a last will." },
-      { g: "διακονία, ἡ", gloss: "service, office, ministry, deacon", freq: 34, tier: "memorize", icon: "🍽️", mn: "thee-ah-ko-NEE-ah ≈ \"THEE-a-CONE-ee-ah.\" The DEACON serves thee a cone: MINISTRY." },
-      { g: "δικαιόω", gloss: "I justify, vindicate", freq: 39, tier: "memorize", icon: "⚖️", mn: "thee-KEH-o-o ≈ \"THEE? OKAY-o!\" Declared in the right: JUSTIFY." },
+      { g: "διακονία, ἡ", gloss: "service, office, ministry, deacon", freq: 34, tier: "memorize", icon: "🍽️", mn: "thee-ah-ko-NEE-ah ≈ \"THEE-a-CONE-ee-ah.\" The root of DEACON, its δ softened to \"th\": MINISTRY." },
+      { g: "δικαιόω", gloss: "I justify, vindicate", freq: 39, tier: "memorize", icon: "⚖️", mn: "thee-KEH-o-o ≈ \"THEE? OKAY-o!\" From δίκαιος, righteous: declared in the right, JUSTIFY." },
       { g: "διότι", gloss: "for, because, therefore", freq: 23, tier: "memorize", icon: "➡️", mn: "thee-O-tee ≈ \"THEE-oh-TEA.\" Why? BECAUSE thee wanted tea." },
-      { g: "δυνατός", gloss: "powerful, strong, mighty, able", freq: 32, tier: "memorize", icon: "💪", mn: "thew-nah-TOS ≈ \"THEWS-a-TOSS.\" Thews are sinews — strong enough to toss it: POWERFUL." },
+      { g: "δυνατός", gloss: "powerful, strong, mighty, able", freq: 32, tier: "memorize", icon: "💪", mn: "thew-nah-TOS ≈ \"THEWS-a-TOSS.\" Spelled δυν-, our DYNAMITE: POWERFUL, able." },
       { g: "ἐγγύς", gloss: "near, close to", freq: 31, tier: "memorize", icon: "📍", mn: "ehng-GHEWS ≈ \"ANGUISH.\" So close it presses on you: NEAR." },
       { g: "ἔξεστιν", gloss: "it is lawful, permitted", freq: 31, tier: "memorize", icon: "✅", mn: "ehx-eh-STEEN ≈ \"the EXIT'S-TEEN.\" That exit is allowed: IT IS LAWFUL." },
       { g: "ἐπίγνωσις, -εως, ἡ", gloss: "knowledge, recognition", freq: 20, tier: "memorize", icon: "💡", mn: "eh-pee-ghno-SEES ≈ \"a-PIGGY-KNOWS-ees.\" What the piggy knows in full: KNOWLEDGE." },

@@ -1219,7 +1219,7 @@ function renderSettings() {
   const voiceNote = view.querySelector("#voice-note");
   const sampleEl = view.querySelector("#pron-sample");
   const ABOUT = {
-    koine: "Reconstructed first-century pronunciation \u2014 how the New Testament most likely sounded. β is v, δ is th, αι sounds like ε, and ει like ι.",
+    koine: "Reconstructed first-century pronunciation \u2014 how the New Testament most likely sounded. β says v and δ says th (as in \"the\"), so διακονία is \"thee-ah-ko-NEE-ah\" even though our DEACON keeps the older d. αι sounds like ε, and ει like ι.",
     erasmian: "The classroom convention used in most seminaries. Not historical, but it keeps every letter distinct, which helps with spelling.",
     modern: "Greek as spoken today. Uses a real Greek voice when your device has one installed."
   };
