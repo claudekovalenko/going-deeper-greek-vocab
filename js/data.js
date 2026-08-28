@@ -1,7 +1,9 @@
 // ============================================================
 // Greek Vocabulary Database
 // ------------------------------------------------------------
-// Each set has: id, source, title, and words.
+// Each set has: id, source, chapter, title, and words. The chapter is
+// the workbook chapter the page came from; it drives the chapter picker,
+// and can be reassigned in Settings without editing this file.
 // Each word: g (Greek lexical form), gloss (English), freq (NT
 // frequency count from the workbook), tier ('memorize' | 'recognize'),
 // icon (a symbol shown with the hint) and mn (the built-in memory hook).
@@ -15,7 +17,8 @@ const VOCAB_SETS = [
   {
     id: "gd-set-01",
     source: "Going Deeper with New Testament Greek",
-    title: "Set 1 — Mark 1 Vocabulary",
+    chapter: 2,
+    title: "Chapter 2 — Mark 1 Vocabulary",
     words: [
       // ---- Vocabulary to Memorize ----
       { g: "ἀπαγγέλλω", gloss: "I announce, proclaim, report", freq: 45, tier: "memorize", icon: "📢", mn: "ah-pahng-GHEHL-lo ≈ \"a PANG — hard-G HELLO!\" A pang, then you hail everyone: ANNOUNCE." },
@@ -83,7 +86,8 @@ const VOCAB_SETS = [
   {
     id: "gd-set-02",
     source: "Going Deeper with New Testament Greek",
-    title: "Set 2 — Romans Vocabulary",
+    chapter: 3,
+    title: "Chapter 3 — Romans Vocabulary",
     words: [
       // ---- Vocabulary to Memorize ----
       { g: "ἀγρός, ὁ", gloss: "field, country", freq: 36, tier: "memorize", icon: "🌾", mn: "ah-GHROS ≈ \"a GROSS.\" A gross of wheat standing in the FIELD." },

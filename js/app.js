@@ -19,6 +19,8 @@ let settings = store.load(LS_SETTINGS, {
   direction: "g2e",          // g2e | e2g | mixed
   tiers: { memorize: true, recognize: true },
   enabledSets: {},           // setId -> bool (default true)
+  setChapter: {},            // setId -> chapter number, overriding the built-in one
+  chapter: null,             // null = every chapter; a number = that chapter only
   quizSize: 10,
   pron: "koine"              // koine | erasmian | modern
 });
@@ -506,12 +508,55 @@ function mountHint(w, allowAdd = true) {
 // ---------------- data ----------------
 function allSets() { return [...VOCAB_SETS, ...customSets]; }
 
+// ---------------- chapters ----------------
+// Every set belongs to a workbook chapter, so a new lesson can be studied on
+// its own. Settings can reassign one, which is how a pasted set gets filed.
+function chapterOf(set) {
+  const override = (settings.setChapter || {})[set.id];
+  return override === undefined ? set.chapter : override;
+}
+function chapters() {
+  const seen = new Set();
+  for (const s of allSets()) { const c = chapterOf(s); if (c != null) seen.add(c); }
+  return [...seen].sort((a, b) => a - b);
+}
+// The stored title carries a "Chapter N — " prefix; the chapter can be
+// reassigned, so the prefix is rebuilt from the live value rather than trusted.
+function setLabel(set) {
+  const name = set.title.replace(/^Chapter\s+\d+\s*[\u2014-]\s*/, "");
+  const c = chapterOf(set);
+  return c == null ? name : `Chapter ${c} \u2014 ${name}`;
+}
+function newestChapter() { const c = chapters(); return c.length ? c[c.length - 1] : null; }
+
+function setChapterFilter(v) {
+  settings.chapter = v;
+  saveSettings();
+  session = null; deck = null; quiz = null;   // the pool changed, so start clean
+}
+function chapterMarkup() {
+  const cur = settings.chapter ?? null, newest = newestChapter();
+  const pill = (v, label) =>
+    `<button class="pill ${v === cur ? "on" : ""}" data-ch="${v === null ? "all" : v}">${label}</button>`;
+  return `<div class="pill-row" id="chapters">
+      ${pill(null, "All chapters")}
+      ${chapters().map(c => pill(c, `Chapter ${c}${c === newest ? " \u00b7 new" : ""}`)).join("")}
+    </div>`;
+}
+function mountChapters(after) {
+  view.querySelectorAll("#chapters .pill").forEach(b => b.onclick = () => {
+    setChapterFilter(b.dataset.ch === "all" ? null : Number(b.dataset.ch));
+    after();
+  });
+}
+
 function wordId(setId, w) { return setId + "::" + w.g; }
 
 function activeWords() {
   const out = [];
   for (const set of allSets()) {
     if (settings.enabledSets[set.id] === false) continue;
+    if (settings.chapter != null && chapterOf(set) !== settings.chapter) continue;
     for (const w of set.words) {
       if (!settings.tiers[w.tier ?? "memorize"]) continue;
       out.push({ ...w, setId: set.id, setTitle: set.title, id: wordId(set.id, w) });
@@ -627,6 +672,10 @@ function renderHome() {
   view.innerHTML = `
     <div class="card-panel">
       <h2>Studying</h2>
+      ${chapterMarkup()}
+      <p class="muted">${settings.chapter == null
+        ? `Every chapter is in the deck \u2014 ${words.length} words.`
+        : `Chapter ${settings.chapter} only \u2014 ${words.length} words.`}</p>
       ${tierModeMarkup()}
       <p class="muted">${
         tierMode() === "both" ? "Both tiers are in the deck."
@@ -653,12 +702,14 @@ function renderHome() {
       <h2>Vocabulary Sets</h2>
       ${allSets().map(s => {
         const on = settings.enabledSets[s.id] !== false;
-        return `<label class="row"><span>${esc(s.title)} <span class="muted">(${s.words.length})</span></span>
+        const c = chapterOf(s);
+        return `<label class="row"><span>${esc(setLabel(s))} <span class="muted">(${s.words.length}${c == null ? ", unfiled" : ""})</span></span>
           <input type="checkbox" data-set="${esc(s.id)}" ${on ? "checked" : ""}></label>`;
       }).join("")}
-      <p class="muted">Upload more workbook pages to Claude and new sets are added here. You can also paste a set in Settings.</p>
+      <p class="muted">These switches work inside whichever chapter is selected above. Upload more workbook pages to Claude and new sets are added here, filed under their chapter; a set can be moved to a different chapter in Settings.</p>
     </div>`;
 
+  mountChapters(renderHome);
   mountTierMode(renderHome);
   view.querySelector("#go-review").onclick = () => show("review");
   view.querySelector("#go-flash").onclick = () => show("flash");
@@ -921,6 +972,7 @@ function renderBrowse() {
   view.innerHTML = `
     <input type="text" id="search" placeholder="Search Greek or English… (accents optional)">
     <p class="muted" style="margin-top:8px">Tap any word to add a picture or note you\u2019ll see as a hint while studying.</p>
+    ${chapterMarkup()}
     <div class="pill-row" id="tierf">
       <button class="pill on" data-f="all">All</button>
       <button class="pill" data-f="memorize">Memorize</button>
@@ -952,6 +1004,7 @@ function renderBrowse() {
       if (w) openWordEditor(w);
     });
   };
+  mountChapters(renderBrowse);
   view.querySelector("#search").oninput = draw;
   view.querySelectorAll("#tierf .pill").forEach(p => p.onclick = () => {
     view.querySelectorAll("#tierf .pill").forEach(x => x.classList.remove("on"));
@@ -1265,8 +1318,15 @@ function renderSettings() {
       <p class="muted">Also on the Home screen, so you can switch before a session.</p>
     </div>
     <div class="card-panel">
+      <h2>Chapters</h2>
+      <p class="muted">Which chapter each set belongs to. Change a number and that set moves; leave it blank to leave the set unfiled, in which case it only appears under All chapters.</p>
+      ${allSets().map(x => `<label class="row"><span>${esc(setLabel(x))}</span>
+        <input type="number" class="ch-num" inputmode="numeric" min="1" data-set="${esc(x.id)}"
+               value="${chapterOf(x) ?? ""}" style="width:5.5em;margin-top:0"></label>`).join("")}
+    </div>
+    <div class="card-panel">
       <h2>Add a Vocabulary Set</h2>
-      <p class="muted">Paste JSON: {"id":"my-set","title":"…","words":[{"g":"λόγος, ὁ","gloss":"word","freq":330,"tier":"memorize"}]}</p>
+      <p class="muted">Paste JSON: {"id":"my-set","chapter":4,"title":"…","words":[{"g":"λόγος, ὁ","gloss":"word","freq":330,"tier":"memorize"}]}</p>
       <textarea id="paste" placeholder="Paste set JSON here"></textarea>
       <button class="btn small secondary" id="add-set">Add Set</button>
       <div id="add-fb"></div>
@@ -1316,6 +1376,22 @@ function renderSettings() {
   });
   mountTierMode(renderSettings);
   view.querySelector("#go-redo").onclick = () => show("redo");
+  view.querySelectorAll(".ch-num").forEach(inp => inp.onchange = () => {
+    const raw = inp.value.trim();
+    const n = raw === "" ? null : Number(raw);
+    if (raw !== "" && (!Number.isFinite(n) || n < 1)) { inp.value = chapterOf(allSets().find(x => x.id === inp.dataset.set)) ?? ""; return; }
+    settings.setChapter = settings.setChapter || {};
+    const was = chapterOf(allSets().find(x => x.id === inp.dataset.set));
+    settings.setChapter[inp.dataset.set] = n;
+    // If you were studying the chapter this set just left, follow it.
+    if (settings.chapter != null && settings.chapter === was) settings.chapter = n;
+    // A set may have just left the chapter being studied, so drop the pool.
+    session = null; deck = null; quiz = null;
+    if (settings.chapter != null && !chapters().includes(settings.chapter)) settings.chapter = null;
+    saveSettings();
+    renderSettings();
+  });
+
   const aiUrl = view.querySelector("#ai-url"), aiToken = view.querySelector("#ai-token");
   aiUrl.onchange = () => {
     const v = aiUrl.value.trim();
@@ -1334,10 +1410,13 @@ function renderSettings() {
     try {
       const set = JSON.parse(view.querySelector("#paste").value);
       if (!set.id || !set.title || !Array.isArray(set.words)) throw new Error("Needs id, title, words[]");
+      // A chapter is optional, but if given it has to be a number to sort with the rest.
+      if (set.chapter != null && !Number.isFinite(Number(set.chapter))) throw new Error("chapter must be a number");
+      if (set.chapter != null) set.chapter = Number(set.chapter);
       customSets = customSets.filter(s => s.id !== set.id).concat([set]);
       store.save(LS_CUSTOM, customSets);
-      deck = null;
-      fb.innerHTML = `<div class="feedback ok">Added "${esc(set.title)}" (${set.words.length} words)</div>`;
+      deck = null; session = null; quiz = null;
+      fb.innerHTML = `<div class="feedback ok">Added "${esc(set.title)}" (${set.words.length} words${set.chapter == null ? ", unfiled \u2014 give it a chapter above" : ", chapter " + set.chapter})</div>`;
     } catch (e) {
       fb.innerHTML = `<div class="feedback no">Invalid JSON: ${esc(e.message)}</div>`;
     }
