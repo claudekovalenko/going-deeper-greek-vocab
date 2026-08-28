@@ -353,9 +353,13 @@ function hintPrompt(w) {
 }
 // A verdict on the hook: 1 keep it, -1 replace it, 0/absent no opinion.
 function hookVote(id) { return (hints[id] || {}).vote || 0; }
-async function setHookVote(id, v) {
+async function setHookVote(id, v, w) {
   const h = hints[id] || {};
-  await putHint(id, { buf: h.buf, type: h.type, mn: h.mn, wish: h.wish, vote: h.vote === v ? 0 : v });
+  const next = h.vote === v ? 0 : v;
+  // Keeping a hook freezes its current wording as yours, so a later update to
+  // the built-in text cannot quietly take it away.
+  const pin = next === 1 && !h.mn && w ? hookText(w) : h.mn;
+  await putHint(id, { buf: h.buf, type: h.type, mn: pin, wish: h.wish, vote: next });
 }
 async function setWish(id, text) {
   const h = hints[id] || {};
@@ -465,7 +469,7 @@ function mountHint(w, allowAdd = true) {
     const up = body.querySelector("#vote-up"), down = body.querySelector("#vote-down");
     const wish = body.querySelector("#wish");
     if (wish) wish.onchange = () => setWish(w.id, wish.value);   // fires on blur, dictation included
-    if (up) up.onclick = async () => { await setHookVote(w.id, 1); draw(); };
+    if (up) up.onclick = async () => { await setHookVote(w.id, 1, w); draw(); };
     if (down) down.onclick = async () => { await setHookVote(w.id, -1); draw(); };
     body.querySelector("#pick-pic").onclick = () => picker.click();
     const noteInput = body.querySelector("#my-note");
