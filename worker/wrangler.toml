@@ -1,0 +1,12 @@
+name = "greek-vocab-mnemonics"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Secrets are set with `wrangler secret put`, never written in this file:
+#   wrangler secret put ANTHROPIC_API_KEY     (required)
+#   wrangler secret put APP_TOKEN             (optional, recommended)
+#
+# Lock the worker to your app's origin so a stray caller cannot spend your key:
+[vars]
+ALLOWED_ORIGIN = "https://claudekovalenko.github.io"

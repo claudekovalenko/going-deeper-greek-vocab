@@ -373,6 +373,7 @@ textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
 .redo-item:last-of-type { border-bottom: none; }
 </style>
 
+
 <header id="topbar">
   <h1 id="app-title"><span class="om">Ω</span>Koine Vocab</h1>
   <button id="btn-settings" class="icon-btn" title="Settings">Settings</button>
@@ -536,8 +537,7 @@ const VOCAB_SETS = [
     ]
   }
 ];
-</script>
-<script>
+
 /* Greek Vocab PWA — flashcards, quizzes, and spaced repetition */
 "use strict";
 
@@ -1539,6 +1539,22 @@ function applyRedo(text, words) {
   return { applied, missed };
 }
 
+// With a worker configured, the round trip happens in the app. Without one,
+// the copy-and-paste flow below is unchanged.
+async function askClaude(prompt) {
+  const url = (settings.aiUrl || "").trim();
+  if (!url) throw new Error("No endpoint configured.");
+  const headers = { "content-type": "application/json" };
+  if (settings.aiToken) headers["x-app-token"] = settings.aiToken;
+
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify({ prompt }) });
+  let body = {};
+  try { body = await res.json(); } catch { /* leave it empty; handled below */ }
+  if (!res.ok) throw new Error(body.error || `The endpoint returned ${res.status}.`);
+  if (!body.text) throw new Error("The endpoint sent nothing back.");
+  return body.text;
+}
+
 function renderRedo() {
   const words = dislikedWords();
   if (!words.length) {
@@ -1574,7 +1590,8 @@ function renderRedo() {
       <label class="tool-label" for="batch-note" style="margin-top:14px">One instruction for the whole batch</label>
       <textarea id="batch-note" class="hook-input" rows="2"
         placeholder="e.g. keep them short, or lean on sports and food">${esc(settings.redoNote || "")}</textarea>
-      <button class="btn" id="copy">Copy the prompt for Claude</button>
+      ${settings.aiUrl ? `<button class="btn" id="ask">Rewrite them with Claude</button>` : ""}
+      <button class="btn secondary" id="copy">Copy the prompt for Claude</button>
       <div id="copy-fb"></div>
     </div>
     <div class="card-panel">
@@ -1595,6 +1612,31 @@ function renderRedo() {
   });
   const batch = view.querySelector("#batch-note");
   batch.onchange = () => { settings.redoNote = batch.value.trim() || undefined; saveSettings(); };
+  const ask = view.querySelector("#ask");
+  if (ask) ask.onclick = async () => {
+    const fb = view.querySelector("#copy-fb");
+    ask.disabled = true;
+    ask.textContent = "Asking Claude\u2026";
+    fb.innerHTML = "";
+    try {
+      const reply = await askClaude(redoPrompt(words));
+      const { applied, missed } = applyRedo(reply, words);
+      if (!applied.length) throw new Error("Claude's reply did not name any of these words.");
+      for (const { w, hook } of applied) {
+        const h = hints[w.id] || {};
+        await putHint(w.id, { buf: h.buf, type: h.type, mn: hook, vote: 0 });
+      }
+      fb.innerHTML = `<div class="feedback ok">Rewrote ${applied.length}
+        ${applied.length === 1 ? "mnemonic" : "mnemonics"}.${
+        missed.length ? ` Could not match: ${esc(missed.join(", "))}.` : ""}</div>`;
+      setTimeout(renderRedo, 900);
+    } catch (e) {
+      ask.disabled = false;
+      ask.textContent = "Rewrite them with Claude";
+      fb.innerHTML = `<div class="feedback no">${esc(e.message)} You can still copy the prompt below.</div>`;
+    }
+  };
+
   view.querySelector("#copy").onclick = async () => {
     const text = redoPrompt(words);
     const fb = view.querySelector("#copy-fb");
@@ -1748,6 +1790,16 @@ function renderSettings() {
       <button class="btn secondary" id="go-redo">Replace the ones I disliked (${dislikedWords().length})</button>
     </div>
     <div class="card-panel">
+      <h2>Rewriting with Claude</h2>
+      <p class="muted">Optional. With a worker deployed, the Replace screen rewrites mnemonics in the
+        app instead of asking you to copy a prompt out. Setup is in <code>worker/README.md</code>.</p>
+      <label class="tool-label" for="ai-url">Worker URL</label>
+      <input type="text" id="ai-url" placeholder="https://\u2026workers.dev" value="${esc(settings.aiUrl || "")}">
+      <label class="tool-label" for="ai-token" style="margin-top:10px">App token (if you set one)</label>
+      <input type="text" id="ai-token" value="${esc(settings.aiToken || "")}">
+      <div id="ai-fb"></div>
+    </div>
+    <div class="card-panel">
       <h2>Word Tiers</h2>
       ${tierModeMarkup()}
       <p class="muted">Also on the Home screen, so you can switch before a session.</p>
@@ -1804,6 +1856,18 @@ function renderSettings() {
   });
   mountTierMode(renderSettings);
   view.querySelector("#go-redo").onclick = () => show("redo");
+  const aiUrl = view.querySelector("#ai-url"), aiToken = view.querySelector("#ai-token");
+  aiUrl.onchange = () => {
+    const v = aiUrl.value.trim();
+    if (v && !/^https:\/\//i.test(v)) {
+      view.querySelector("#ai-fb").innerHTML = `<div class="feedback no">Use the full https:// URL.</div>`;
+      return;
+    }
+    settings.aiUrl = v || undefined; saveSettings();
+    view.querySelector("#ai-fb").innerHTML = v
+      ? `<div class="feedback ok">Saved. The Replace screen can now rewrite in place.</div>` : "";
+  };
+  aiToken.onchange = () => { settings.aiToken = aiToken.value.trim() || undefined; saveSettings(); };
 
   view.querySelector("#add-set").onclick = () => {
     const fb = view.querySelector("#add-fb");
@@ -1875,4 +1939,5 @@ function renderSettings() {
 
 // ---------------- boot ----------------
 loadHints().then(() => show("home"));
+
 </script>
