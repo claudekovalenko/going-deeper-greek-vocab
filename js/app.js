@@ -1129,24 +1129,42 @@ function renderRedo() {
   if (ask) ask.onclick = async () => {
     const fb = view.querySelector("#copy-fb");
     ask.disabled = true;
-    ask.textContent = "Asking Claude\u2026";
     fb.innerHTML = "";
+
+    // A long queue would blow past the endpoint's prompt limit and the reply
+    // length, so it goes over in batches, each applied as it lands. A failure
+    // half way through therefore keeps the words already rewritten.
+    const BATCH = 12;
+    const batches = [];
+    for (let i = 0; i < words.length; i += BATCH) batches.push(words.slice(i, i + BATCH));
+
+    let done = 0, missedAll = [];
     try {
-      const reply = await askClaude(redoPrompt(words));
-      const { applied, missed } = applyRedo(reply, words);
-      if (!applied.length) throw new Error("Claude's reply did not name any of these words.");
-      for (const { w, hook } of applied) {
-        const h = hints[w.id] || {};
-        await putHint(w.id, { buf: h.buf, type: h.type, mn: hook, vote: 0 });
+      for (let i = 0; i < batches.length; i++) {
+        ask.textContent = batches.length > 1
+          ? `Asking Claude\u2026 (${i + 1} of ${batches.length})`
+          : "Asking Claude\u2026";
+        const reply = await askClaude(redoPrompt(batches[i]));
+        const { applied, missed } = applyRedo(reply, batches[i]);
+        for (const { w, hook } of applied) {
+          const h = hints[w.id] || {};
+          // The wish is deliberately not carried over: it has been acted on.
+          await putHint(w.id, { buf: h.buf, type: h.type, mn: hook, vote: 0 });
+        }
+        done += applied.length;
+        missedAll = missedAll.concat(missed);
       }
-      fb.innerHTML = `<div class="feedback ok">Rewrote ${applied.length}
-        ${applied.length === 1 ? "mnemonic" : "mnemonics"}.${
-        missed.length ? ` Could not match: ${esc(missed.join(", "))}.` : ""}</div>`;
+      if (!done) throw new Error("Claude's reply did not name any of these words.");
+      fb.innerHTML = `<div class="feedback ok">Rewrote ${done}
+        ${done === 1 ? "mnemonic" : "mnemonics"}.${
+        missedAll.length ? ` Could not match: ${esc(missedAll.join(", "))}.` : ""}</div>`;
       setTimeout(renderRedo, 900);
     } catch (e) {
       ask.disabled = false;
       ask.textContent = "Rewrite them with Claude";
-      fb.innerHTML = `<div class="feedback no">${esc(e.message)} You can still copy the prompt below.</div>`;
+      fb.innerHTML = `<div class="feedback no">${esc(e.message)}${
+        done ? ` ${done} were rewritten before that; press it again for the rest.` : ""
+        } You can still copy the prompt below.</div>`;
     }
   };
 
