@@ -255,3 +255,7 @@ textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
 }
 .redo-item { border-bottom: 1px solid #232e4d; padding-bottom: 14px; margin-bottom: 14px; }
 .redo-item:last-of-type { border-bottom: none; }
+
+/* ---- whose deck ---- */
+.who-panel select { margin-top: 0; }
+.who-panel h2 { margin-bottom: 8px; }

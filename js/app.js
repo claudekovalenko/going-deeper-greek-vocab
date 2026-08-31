@@ -14,8 +14,30 @@ const store = {
   save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 };
 
-let progress = store.load(LS_PROGRESS, {});
-let settings = store.load(LS_SETTINGS, {
+// ---------------- people ----------------
+// Several learners share the app, each with their own words, progress and
+// hints. "me" deliberately keeps the original, unsuffixed storage keys so the
+// study history built up before profiles existed is still there.
+const LS_PEOPLE = "gv-people-v1";
+const LS_WHO = "gv-who-v1";
+const DEFAULT_PEOPLE = [
+  { id: "me", name: "Me" },
+  { id: "ivan", name: "Ivan" },
+  { id: "jett", name: "Jett" }
+];
+
+let people = store.load(LS_PEOPLE, DEFAULT_PEOPLE);
+if (!Array.isArray(people) || !people.length) people = DEFAULT_PEOPLE;
+let who = store.load(LS_WHO, "me");
+if (!people.some(p => p.id === who)) who = people[0].id;
+
+function savePeople() { store.save(LS_PEOPLE, people); }
+function currentPerson() { return people.find(p => p.id === who) || people[0]; }
+/** Storage key for the person in view; "me" keeps the original key. */
+function keyFor(base, id = who) { return id === "me" ? base : `${base}::${id}`; }
+
+let progress = store.load(keyFor(LS_PROGRESS), {});
+const DEFAULT_SETTINGS = {
   direction: "g2e",          // g2e | e2g | mixed
   tiers: { memorize: true, recognize: true },
   enabledSets: {},           // setId -> bool (default true)
@@ -23,10 +45,11 @@ let settings = store.load(LS_SETTINGS, {
   chapter: null,             // null = every chapter; a number = that chapter only
   quizSize: 10,
   pron: "koine"              // koine | erasmian | modern
-});
-let customSets = store.load(LS_CUSTOM, []);
+};
+let settings = store.load(keyFor(LS_SETTINGS), { ...DEFAULT_SETTINGS });
+let customSets = store.load(keyFor(LS_CUSTOM), []);
 
-function saveProgress() { store.save(LS_PROGRESS, progress); }
+function saveProgress() { store.save(keyFor(LS_PROGRESS), progress); }
 
 // Which tiers are being studied, as a single choice rather than two checkboxes.
 const TIER_MODES = [
@@ -56,7 +79,35 @@ function mountTierMode(after) {
     after();
   });
 }
-function saveSettings() { store.save(LS_SETTINGS, settings); }
+function saveSettings() { store.save(keyFor(LS_SETTINGS), settings); }
+
+// The Claude endpoint is one setting that belongs to the device, not to a
+// learner: it is the same worker whoever is studying.
+const LS_AI = "gv-ai-v1";
+let aiConfig = store.load(LS_AI, {});
+if (!aiConfig.url && settings.aiUrl) {   // saved before the endpoint became device-wide
+  aiConfig = { url: settings.aiUrl, token: settings.aiToken };
+  store.save(LS_AI, aiConfig);
+}
+function saveAi() { store.save(LS_AI, aiConfig); }
+
+function switchTo(id) {
+  if (!people.some(p => p.id === id) || id === who) return;
+  who = id;
+  store.save(LS_WHO, who);
+  progress = store.load(keyFor(LS_PROGRESS), {});
+  settings = store.load(keyFor(LS_SETTINGS), { ...DEFAULT_SETTINGS });
+  customSets = store.load(keyFor(LS_CUSTOM), []);
+  session = null; deck = null; quiz = null;
+  setAppTitle();
+}
+
+function setAppTitle() {
+  const el = document.getElementById("app-title");
+  if (!el) return;
+  const name = currentPerson().name;
+  el.textContent = people.length > 1 && who !== "me" ? `\u03a9 ${name}\u2019s Greek` : "\u03a9 Greek Vocab";
+}
 
 // ---------------- pronunciation ----------------
 // Text-to-speech voices cannot read polytonic Greek, and none of them speak
@@ -506,7 +557,11 @@ function mountHint(w, allowAdd = true) {
 }
 
 // ---------------- data ----------------
-function allSets() { return [...VOCAB_SETS, ...customSets]; }
+// Built-in sets carry an owner; the ones written before profiles existed have
+// none, which means they belong to the original learner.
+function allSets() {
+  return [...VOCAB_SETS.filter(x => (x.owner || "me") === who), ...customSets];
+}
 
 // ---------------- chapters ----------------
 // Every set belongs to a workbook chapter, so a new lesson can be studied on
@@ -550,7 +605,12 @@ function mountChapters(after) {
   });
 }
 
-function wordId(setId, w) { return setId + "::" + w.g; }
+// Hints live in one IndexedDB store keyed by word id, so the id has to name the
+// person too — otherwise two people whose sets share an id would share pictures
+// and mnemonics. "me" keeps the unprefixed form its existing hints are under.
+function wordId(setId, w) {
+  return (who === "me" ? "" : who + "//") + setId + "::" + w.g;
+}
 
 function activeWords() {
   const out = [];
@@ -670,6 +730,13 @@ function renderHome() {
   const learning = words.filter(w => wordStatus(w.id) === "learning").length;
 
   view.innerHTML = `
+    ${people.length > 1 ? `<div class="card-panel who-panel">
+      <h2>Whose deck</h2>
+      <select id="who">
+        ${people.map(p => `<option value="${esc(p.id)}" ${p.id === who ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
+      </select>
+      <p class="muted" style="margin-top:8px">Each person has their own words, progress and hints. Nothing crosses over.</p>
+    </div>` : ""}
     <div class="card-panel">
       <h2>Studying</h2>
       ${chapterMarkup()}
@@ -682,6 +749,12 @@ function renderHome() {
         : tierMode() === "memorize" ? "Only words to memorize. The recognize list is set aside."
         : "Only words to recognize."}</p>
     </div>
+    ${words.length ? "" : `<div class="card-panel">
+      <h3>No words yet</h3>
+      <p class="muted">${esc(currentPerson().name)} has no vocabulary in the app yet. Send the
+        word list to Claude and it gets added here as a chapter, with the same sound-alike
+        mnemonics, audio and spaced repetition as every other deck.</p>
+    </div>`}
     <div class="card-panel">
       <h2>Today</h2>
       <div class="stat-row">
@@ -709,6 +782,8 @@ function renderHome() {
       <p class="muted">These switches work inside whichever chapter is selected above. Upload more workbook pages to Claude and new sets are added here, filed under their chapter; a set can be moved to a different chapter in Settings.</p>
     </div>`;
 
+  const whoSel = view.querySelector("#who");
+  if (whoSel) whoSel.onchange = () => { switchTo(whoSel.value); renderHome(); };
   mountChapters(renderHome);
   mountTierMode(renderHome);
   view.querySelector("#go-review").onclick = () => show("review");
@@ -1055,10 +1130,10 @@ function applyRedo(text, words) {
 // With a worker configured, the round trip happens in the app. Without one,
 // the copy-and-paste flow below is unchanged.
 async function askClaude(prompt) {
-  const url = (settings.aiUrl || "").trim();
+  const url = (aiConfig.url || "").trim();
   if (!url) throw new Error("No endpoint configured.");
   const headers = { "content-type": "application/json" };
-  if (settings.aiToken) headers["x-app-token"] = settings.aiToken;
+  if (aiConfig.token) headers["x-app-token"] = aiConfig.token;
 
   const res = await fetch(url, { method: "POST", headers, body: JSON.stringify({ prompt }) });
   let body = {};
@@ -1103,7 +1178,7 @@ function renderRedo() {
       <label class="tool-label" for="batch-note" style="margin-top:14px">One instruction for the whole batch</label>
       <textarea id="batch-note" class="hook-input" rows="2"
         placeholder="e.g. keep them short, or lean on sports and food">${esc(settings.redoNote || "")}</textarea>
-      ${settings.aiUrl ? `<button class="btn" id="ask">Rewrite them with Claude</button>` : ""}
+      ${aiConfig.url ? `<button class="btn" id="ask">Rewrite them with Claude</button>` : ""}
       <button class="btn secondary" id="copy">Copy the prompt for Claude</button>
       <div id="copy-fb"></div>
     </div>
@@ -1284,11 +1359,42 @@ function openWordEditor(w) {
 }
 
 // ---------------- SETTINGS ----------------
+/** Everyone's decks in one object, so a backup is not just whoever was on screen. */
+function makeBackup() {
+  const decks = {};
+  for (const p of people) {
+    decks[p.id] = {
+      progress: store.load(keyFor(LS_PROGRESS, p.id), {}),
+      settings: store.load(keyFor(LS_SETTINGS, p.id), {}),
+      customSets: store.load(keyFor(LS_CUSTOM, p.id), [])
+    };
+  }
+  return { people, who, decks };
+}
+
 function applyBackup(d) {
   if (!d || typeof d !== "object") throw new Error("not a backup file");
-  if (d.progress) { progress = d.progress; saveProgress(); }
-  if (d.settings) { settings = d.settings; saveSettings(); }
-  if (d.customSets) { customSets = d.customSets; store.save(LS_CUSTOM, customSets); }
+  if (Array.isArray(d.people) && d.people.length && d.decks) {
+    people = d.people;
+    savePeople();
+    for (const p of people) {
+      const deckData = d.decks[p.id] || {};
+      if (deckData.progress) store.save(keyFor(LS_PROGRESS, p.id), deckData.progress);
+      if (deckData.settings) store.save(keyFor(LS_SETTINGS, p.id), deckData.settings);
+      if (deckData.customSets) store.save(keyFor(LS_CUSTOM, p.id), deckData.customSets);
+    }
+    who = people.some(p => p.id === d.who) ? d.who : people[0].id;
+    store.save(LS_WHO, who);
+    progress = store.load(keyFor(LS_PROGRESS), {});
+    settings = store.load(keyFor(LS_SETTINGS), { ...DEFAULT_SETTINGS });
+    customSets = store.load(keyFor(LS_CUSTOM), []);
+    setAppTitle();
+  } else {
+    // A backup written before profiles existed holds one deck: the owner's.
+    if (d.progress) { progress = d.progress; saveProgress(); }
+    if (d.settings) { settings = d.settings; saveSettings(); }
+    if (d.customSets) { customSets = d.customSets; store.save(keyFor(LS_CUSTOM), customSets); }
+  }
   deck = null; session = null; quiz = null;
 }
 
@@ -1325,15 +1431,28 @@ function renderSettings() {
       <p class="muted">Optional. With a worker deployed, the Replace screen rewrites mnemonics in the
         app instead of asking you to copy a prompt out. Setup is in <code>worker/README.md</code>.</p>
       <label class="tool-label" for="ai-url">Worker URL</label>
-      <input type="text" id="ai-url" placeholder="https://\u2026workers.dev" value="${esc(settings.aiUrl || "")}">
+      <input type="text" id="ai-url" placeholder="https://\u2026workers.dev" value="${esc(aiConfig.url || "")}">
       <label class="tool-label" for="ai-token" style="margin-top:10px">App token (if you set one)</label>
-      <input type="text" id="ai-token" value="${esc(settings.aiToken || "")}">
+      <input type="text" id="ai-token" value="${esc(aiConfig.token || "")}">
       <div id="ai-fb"></div>
     </div>
     <div class="card-panel">
       <h2>Word Tiers</h2>
       ${tierModeMarkup()}
       <p class="muted">Also on the Home screen, so you can switch before a session.</p>
+    </div>
+    <div class="card-panel">
+      <h2>People</h2>
+      <p class="muted">Everyone studying on this device. Each has their own words, progress,
+        pictures and mnemonics; only the Claude endpoint below is shared.</p>
+      ${people.map(p => `<label class="row"><span>${p.id === who ? "\u25cf " : ""}${esc(p.name)}</span>
+        <span>
+          <input type="text" class="who-name" data-id="${esc(p.id)}" value="${esc(p.name)}" style="width:8em;margin-top:0">
+          ${p.id === "me" ? "" : `<button class="btn small secondary who-del" data-id="${esc(p.id)}"
+             style="width:auto;display:inline-block;margin:0 0 0 6px">Remove</button>`}
+        </span></label>`).join("")}
+      <input type="text" id="who-new" placeholder="Add someone\u2026">
+      <button class="btn small secondary" id="who-add">Add person</button>
     </div>
     <div class="card-panel">
       <h2>Chapters</h2>
@@ -1355,7 +1474,7 @@ function renderSettings() {
       <button class="btn small secondary" id="import">Import backup from file</button>
       <button class="btn small secondary" id="import-paste">Import backup from pasted text</button>
       <div id="backup-out"></div>
-      <button class="btn small secondary" id="reset" style="color:var(--bad)">Reset all progress</button>
+      <button class="btn small secondary" id="reset" style="color:var(--bad)">Reset ${esc(currentPerson().name)}\u2019s progress</button>
       <p class="muted" style="margin-top:10px">Backups carry your progress, settings and custom sets. Hint pictures stay on this device \u2014 they are too large for a pasted backup, so add them again if you move to a new phone.</p>
     </div>`;
 
@@ -1394,6 +1513,36 @@ function renderSettings() {
   });
   mountTierMode(renderSettings);
   view.querySelector("#go-redo").onclick = () => show("redo");
+  view.querySelectorAll(".who-name").forEach(inp => inp.onchange = () => {
+    const name = inp.value.trim();
+    if (!name) { inp.value = (people.find(p => p.id === inp.dataset.id) || {}).name || ""; return; }
+    const p = people.find(x => x.id === inp.dataset.id);
+    if (p) { p.name = name; savePeople(); setAppTitle(); renderSettings(); }
+  });
+  view.querySelectorAll(".who-del").forEach(b => b.onclick = () => {
+    const p = people.find(x => x.id === b.dataset.id);
+    if (!p) return;
+    // Removing someone throws away their study history, so it is spelled out.
+    if (!confirm(`Remove ${p.name} and erase their words, progress and hints? This cannot be undone.`)) return;
+    for (const base of [LS_PROGRESS, LS_SETTINGS, LS_CUSTOM]) localStorage.removeItem(keyFor(base, p.id));
+    const wasCurrent = who === p.id;
+    people = people.filter(x => x.id !== p.id);
+    savePeople();
+    if (wasCurrent) { who = null; switchTo(people[0].id); }
+    setAppTitle();
+    renderSettings();
+  });
+  view.querySelector("#who-add").onclick = () => {
+    const name = view.querySelector("#who-new").value.trim();
+    if (!name) return;
+    const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "person";
+    let id = base, n = 2;
+    while (people.some(p => p.id === id)) id = `${base}-${n++}`;
+    people.push({ id, name });
+    savePeople();
+    renderSettings();
+  };
+
   view.querySelectorAll(".ch-num").forEach(inp => inp.onchange = () => {
     const raw = inp.value.trim();
     const n = raw === "" ? null : Number(raw);
@@ -1417,11 +1566,11 @@ function renderSettings() {
       view.querySelector("#ai-fb").innerHTML = `<div class="feedback no">Use the full https:// URL.</div>`;
       return;
     }
-    settings.aiUrl = v || undefined; saveSettings();
+    aiConfig.url = v || undefined; saveAi();
     view.querySelector("#ai-fb").innerHTML = v
       ? `<div class="feedback ok">Saved. The Replace screen can now rewrite in place.</div>` : "";
   };
-  aiToken.onchange = () => { settings.aiToken = aiToken.value.trim() || undefined; saveSettings(); };
+  aiToken.onchange = () => { aiConfig.token = aiToken.value.trim() || undefined; saveAi(); };
 
   view.querySelector("#add-set").onclick = () => {
     const fb = view.querySelector("#add-fb");
@@ -1432,7 +1581,7 @@ function renderSettings() {
       if (set.chapter != null && !Number.isFinite(Number(set.chapter))) throw new Error("chapter must be a number");
       if (set.chapter != null) set.chapter = Number(set.chapter);
       customSets = customSets.filter(s => s.id !== set.id).concat([set]);
-      store.save(LS_CUSTOM, customSets);
+      store.save(keyFor(LS_CUSTOM), customSets);
       deck = null; session = null; quiz = null;
       fb.innerHTML = `<div class="feedback ok">Added "${esc(set.title)}" (${set.words.length} words${set.chapter == null ? ", unfiled \u2014 give it a chapter above" : ", chapter " + set.chapter})</div>`;
     } catch (e) {
@@ -1441,7 +1590,7 @@ function renderSettings() {
   };
 
   view.querySelector("#export").onclick = () => {
-    const json = JSON.stringify({ progress, settings, customSets }, null, 2);
+    const json = JSON.stringify(makeBackup(), null, 2);
     // Save a file where downloads are allowed (installed app / browser tab)...
     try {
       const a = document.createElement("a");
@@ -1488,13 +1637,14 @@ function renderSettings() {
   };
 
   view.querySelector("#reset").onclick = () => {
-    if (confirm("Erase ALL study progress? This cannot be undone.")) {
+    if (confirm(`Erase all of ${currentPerson().name}'s study progress? This cannot be undone.`)) {
       progress = {}; saveProgress(); show("home");
     }
   };
 }
 
 // ---------------- boot ----------------
+setAppTitle();
 loadHints().then(() => show("home"));
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
