@@ -41,3 +41,36 @@ npx supabase functions deploy greek-mnemonics --no-verify-jwt
 
 The Cloudflare version in `worker/` still works and is kept as an alternative.
 Only one endpoint is needed.
+
+---
+
+# Sync (`functions/vocab-sync`)
+
+What ends the copy-and-paste loop. The app pushes up which mnemonics are
+marked Keep or Replace — with each word's gloss, chapter, pronunciation, the
+hook in use and any note about it — and pulls down rewritten ones, applying
+them and clearing the Replace mark.
+
+Nothing to configure: the URL is built into the app, and the function uses the
+`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` that Supabase gives its own
+functions. No API key is involved; this endpoint never calls Claude.
+
+A phone identifies itself by a 144-bit id it generates on first run and keeps
+in local storage. Both tables have RLS enabled with no policies, so they are
+unreachable with the anon key — only this function can touch them.
+
+**Pictures are never synced.** They are large, and they stay on the device.
+
+## Reading the marks, and answering them
+
+```sql
+-- what is marked Replace
+select k as word_id, v->>'greek' as greek, v->>'gloss' as gloss,
+       v->>'say' as say, v->>'mn' as current_hook, v->>'wish' as wish
+from public.vocab_devices d, jsonb_each(d.hooks) as e(k, v)
+where (v->>'vote')::int = -1;
+
+-- hand back a rewrite; the app applies it on next open
+insert into public.vocab_replacements (device_id, word_id, mn)
+values ('<device>', '<word_id>', '<new mnemonic>');
+```

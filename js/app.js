@@ -328,6 +328,79 @@ async function loadHints() {
   }
 }
 
+// ---------------- cloud sync ----------------
+// The Keep/Replace verdicts and any notes about them are pushed to a small
+// database so a rewrite can be prepared for you and simply arrive on the next
+// open, instead of being carried back and forth by hand. Pictures are never
+// sent — they are large and they stay on the phone.
+const SYNC_URL = "https://dmiysgmhwpkrunmswtrn.supabase.co/functions/v1/vocab-sync";
+const LS_DEVICE = "gv-device-v1";
+
+function deviceId() {
+  let id = localStorage.getItem(LS_DEVICE);
+  if (!id) {
+    const bytes = new Uint8Array(18);
+    crypto.getRandomValues(bytes);
+    id = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    localStorage.setItem(LS_DEVICE, id);
+  }
+  return id;
+}
+
+async function syncCall(payload) {
+  const res = await fetch(SYNC_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ device: deviceId(), ...payload })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `sync failed (${res.status})`);
+  return body;
+}
+
+/** What the word looks like to whoever is writing a replacement. */
+function syncPayload() {
+  const out = {};
+  for (const set of allSets()) {
+    for (const w of set.words) {
+      const id = wordId(set.id, w);
+      const h = hints[id] || {};
+      if (!h.vote && !h.wish && !h.mn) continue;
+      out[id] = {
+        greek: w.g, gloss: w.gloss, chapter: chapterOf(set) ?? null,
+        say: translit(headword(w.g), settings.pron || "koine"),
+        mn: h.mn || w.mn || "", vote: h.vote || 0, wish: h.wish || ""
+      };
+    }
+  }
+  return out;
+}
+
+let syncTimer = null;
+/** Coalesced, and silent on failure: syncing is a convenience, not the app. */
+function pushSync() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncCall({ action: "push", label: currentPerson().name, hooks: syncPayload() })
+      .catch(() => {});
+  }, 1500);
+}
+
+/** Take any waiting replacements and apply them, clearing the Replace mark. */
+async function pullSync() {
+  let body;
+  try { body = await syncCall({ action: "pull" }); } catch { return 0; }
+  const list = Array.isArray(body.replacements) ? body.replacements : [];
+  let applied = 0;
+  for (const r of list) {
+    if (!r || typeof r.id !== "string" || typeof r.mn !== "string" || !r.mn.trim()) continue;
+    const h = hints[r.id] || {};
+    await putHint(r.id, { buf: h.buf, type: h.type, mn: r.mn.trim(), vote: 0 });
+    applied++;
+  }
+  return applied;
+}
+
 async function putHint(id, val) {
   hints[id] = val;
   if (hintUrls[id]) { URL.revokeObjectURL(hintUrls[id]); delete hintUrls[id]; }
@@ -413,10 +486,12 @@ async function setHookVote(id, v, w) {
   // the built-in text cannot quietly take it away.
   const pin = next === 1 && !h.mn && w ? hookText(w) : h.mn;
   await putHint(id, { buf: h.buf, type: h.type, mn: pin, wish: h.wish, vote: next });
+  pushSync();
 }
 async function setWish(id, text) {
   const h = hints[id] || {};
   await putHint(id, { buf: h.buf, type: h.type, mn: h.mn, vote: h.vote, wish: text.trim() || undefined });
+  pushSync();
 }
 function wishOf(id) { return (hints[id] || {}).wish || ""; }
 
@@ -464,6 +539,7 @@ function mountHint(w, allowAdd = true) {
     const h = hints[w.id] || {};
     // storing under mn retires any older note field for this word
     await putHint(w.id, { buf: h.buf, type: h.type, vote: h.vote, wish: h.wish, mn: text.trim() || undefined });
+    pushSync();
   };
 
   const resetHook = async () => {
@@ -1180,6 +1256,9 @@ function renderRedo() {
         placeholder="e.g. keep them short, or lean on sports and food">${esc(settings.redoNote || "")}</textarea>
       ${aiConfig.url ? `<button class="btn" id="ask">Rewrite them with Claude</button>` : ""}
       <button class="btn secondary" id="copy">Copy the prompt for Claude</button>
+      <button class="btn secondary" id="fetch">Check for rewrites</button>
+      <p class="muted" style="margin-top:8px">These marks are synced, so a rewrite can be prepared
+        for you and applied the next time you open the app. Pictures never leave this phone.</p>
       <div id="copy-fb"></div>
     </div>
     <div class="card-panel">
@@ -1241,6 +1320,17 @@ function renderRedo() {
         done ? ` ${done} were rewritten before that; press it again for the rest.` : ""
         } You can still copy the prompt below.</div>`;
     }
+  };
+
+  view.querySelector("#fetch").onclick = async () => {
+    const btn = view.querySelector("#fetch"), fb = view.querySelector("#copy-fb");
+    btn.disabled = true; btn.textContent = "Checking\u2026";
+    const n = await pullSync();
+    btn.disabled = false; btn.textContent = "Check for rewrites";
+    fb.innerHTML = n
+      ? `<div class="feedback ok">Applied ${n} rewritten ${n === 1 ? "mnemonic" : "mnemonics"}.</div>`
+      : `<div class="feedback">Nothing waiting yet.</div>`;
+    if (n) setTimeout(renderRedo, 900);
   };
 
   view.querySelector("#copy").onclick = async () => {
@@ -1645,7 +1735,13 @@ function renderSettings() {
 
 // ---------------- boot ----------------
 setAppTitle();
-loadHints().then(() => show("home"));
+loadHints().then(async () => {
+  show("home");
+  // Anything rewritten since last time lands now, without being asked for.
+  const n = await pullSync();
+  if (n) { deck = null; session = null; quiz = null; if (currentView === "home") renderHome(); }
+  pushSync();
+});
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
