@@ -789,7 +789,7 @@ function show(name) {
     t.classList.toggle("active", t.dataset.view === name));
   ({ home: renderHome, review: renderReview, flash: renderFlash,
      quiz: renderQuiz, browse: renderBrowse, settings: renderSettings,
-     redo: renderRedo }[name])();
+     redo: renderRedo, sentences: renderSentences }[name])();
   window.scrollTo(0, 0);
 }
 
@@ -845,6 +845,7 @@ function renderHome() {
       <h2>Study Modes</h2>
       <button class="btn secondary" id="go-flash">Flashcards — flip through the deck</button>
       <button class="btn secondary" id="go-quiz">Quiz — multiple choice & typing</button>
+      <button class="btn secondary" id="go-sent">Sentences — the chapter's words in context</button>
       <button class="btn secondary" id="go-browse">Word List — browse & search</button>
     </div>
     <div class="card-panel">
@@ -866,6 +867,7 @@ function renderHome() {
   view.querySelector("#go-flash").onclick = () => show("flash");
   view.querySelector("#go-quiz").onclick = () => show("quiz");
   view.querySelector("#go-browse").onclick = () => show("browse");
+  view.querySelector("#go-sent").onclick = () => show("sentences");
   view.querySelectorAll("input[data-set]").forEach(cb => cb.onchange = () => {
     settings.enabledSets[cb.dataset.set] = cb.checked;
     saveSettings(); renderHome();
@@ -1115,6 +1117,40 @@ function renderQuiz() {
     view.querySelector("#check").onclick = check;
     input.onkeydown = e => { if (e.key === "Enter") check(); };
   }
+}
+
+// ---------------- SENTENCES ----------------
+// Each chapter's words strung into sentences, so they are met in context.
+function sentencesFor() {
+  const sets = (typeof SENTENCE_SETS === "undefined" ? [] : SENTENCE_SETS)
+    .filter(s => settings.chapter == null || s.chapter === settings.chapter);
+  return sets;
+}
+
+function renderSentences() {
+  const sets = sentencesFor();
+  view.innerHTML = `
+    <button class="btn secondary" id="back">\u2190 Back</button>
+    ${chapterMarkup()}
+    ${sets.length ? sets.map(set => `
+      <div class="card-panel">
+        <h2>Chapter ${set.chapter}</h2>
+        ${set.items.map((it, i) => `
+          <div class="sent" data-ch="${set.chapter}" data-i="${i}">
+            <p class="sent-g greek">${esc(it.g)}</p>
+            <p class="sent-e" hidden>${esc(it.e)}</p>
+            <p class="sent-uses">${it.uses.map(u => `<span class="greek">${esc(u)}</span>`).join(" \u00b7 ")}</p>
+          </div>`).join("")}
+      </div>`).join("")
+      : `<div class="card-panel"><p class="muted">No sentences for this chapter yet.</p></div>`}
+    <p class="muted">Written for this app out of each chapter's words \u2014 they are not quotations
+      from the New Testament. Tap a sentence for the English.</p>`;
+
+  view.querySelector("#back").onclick = () => show("home");
+  mountChapters(renderSentences);
+  view.querySelectorAll(".sent").forEach(el => {
+    el.onclick = () => { const e = el.querySelector(".sent-e"); e.hidden = !e.hidden; };
+  });
 }
 
 // ---------------- BROWSE ----------------

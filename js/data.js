@@ -286,3 +286,56 @@ const VOCAB_SETS = [
     ]
   }
 ];
+
+// Sentences built from each chapter's words, so they can be met in context
+// rather than one at a time. Composed for this app, not quoted from the NT.
+const SENTENCE_SETS = [
+  { chapter: 2, items: [
+    { g: "Ἰωάννης ἀπαγγέλλει βάπτισμα μετανοίας εἰς ἄφεσιν.", e: "John announces a baptism of repentance for forgiveness.", uses: ["ἀπαγγέλλω", "βάπτισμα", "μετάνοια", "ἄφεσις"] },
+    { g: "ἐκπορεύεται ὁ ὄχλος εἰς τὴν ἔρημον πρὸς τὸν Ἰορδάνην ποταμόν.", e: "The crowd goes out into the desert, to the Jordan river.", uses: ["ἐκπορεύομαι", "ἔρημος", "Ἰορδάνης", "ποταμός"] },
+    { g: "ἐνδύεται τρίχας καμήλου· ἰσχυρὸς δὲ ἔρχεται ὀπίσω αὐτοῦ.", e: "He wears camel's hair; but a strong one comes after him.", uses: ["ἐνδύω", "θρίξ", "ἰσχυρός", "ὀπίσω"] },
+    { g: "τεσσεράκοντα ἡμέρας ὁ Σατανᾶς πειράζει αὐτὸν μετὰ τῶν θηρίων.", e: "For forty days Satan tempts him, among the wild animals.", uses: ["τεσσεράκοντα", "Σατανᾶς", "πειράζω", "θηρίον"] },
+    { g: "πρὸ τοῦ προσώπου σου ἑτοιμάζω τὴν ὁδόν· διέρχεται γὰρ ὅλην τὴν χώραν.", e: "Before your face I prepare the way, for he goes through the whole region.", uses: ["πρό", "ἑτοιμάζω", "διέρχομαι", "χώρα"] },
+    { g: "κρατοῦσιν αὐτὸν καὶ εἰς φυλακὴν ἄγουσιν· μεγάλη ἡ θλῖψις, καὶ οὐκέτι λαλεῖ.", e: "They seize him and lead him to prison; the affliction is great, and he speaks no longer.", uses: ["κρατέω", "φυλακή", "θλῖψις", "οὐκέτι"] },
+    { g: "ὁ θεὸς εὐδοκεῖ, καθὼς Ἠσαΐας λέγει· καθίζει ὁ υἱὸς ἐν τῷ ναῷ.", e: "God is well pleased, as Isaiah says; the son sits down in the temple.", uses: ["εὐδοκέω", "Ἠσαΐας", "καθίζω", "ναός"] },
+    { g: "οὐαί· σταυροῦσιν αὐτόν. ἄρα ἀποδίδωσιν ὁ θεὸς ἑκάστῳ.", e: "Woe — they crucify him. So then God repays each one.", uses: ["οὐαί", "σταυρόω", "ἄρα", "ἀποδίδωμι"] },
+    { g: "οὐκ εἰμὶ ἱκανός, ἀλλὰ διακονῶ καὶ προσφέρω δῶρα, καὶ ἐπιγινώσκω αὐτόν.", e: "I am not qualified, but I serve and bring gifts, and I recognize him.", uses: ["ἱκανός", "διακονέω", "προσφέρω", "ἐπιγινώσκω"] },
+    { g: "ἄχρι τοῦ δευτέρου ἔτους ὅμοιος ἦν τῷ πατρί.", e: "Until the second year he was like his father.", uses: ["ἄχρι", "δεύτερος", "ἔτος", "ὅμοιος"] },
+  ] },
+  { chapter: 3, items: [
+    { g: "ἀναγινώσκει τὸ βιβλίον τῆς διαθήκης εἰς ἐπίγνωσιν ἀληθείας.", e: "He reads the book of the covenant, for knowledge of truth.", uses: ["ἀναγινώσκω", "βιβλίον", "διαθήκη", "ἐπίγνωσις"] },
+    { g: "εὐθέως ὁ ἥλιος ἀνατέλλει καὶ ὁ ἄνεμος πνεῖ ἐπὶ τὸν ἀγρόν.", e: "Immediately the sun rises and the wind blows over the field.", uses: ["εὐθέως", "ἥλιος", "ἄνεμος", "ἀγρός"] },
+    { g: "ὁ ἱερεὺς καθαρίζει τὸ ἀκάθαρτον ποτήριον.", e: "The priest cleanses the unclean cup.", uses: ["ἱερεύς", "καθαρίζω", "ἀκάθαρτος", "ποτήριον"] },
+    { g: "χωρὶς περιτομῆς, ἐν ἀκροβυστίᾳ, δικαιοῖ ὁ θεός.", e: "Apart from circumcision, in uncircumcision, God justifies.", uses: ["χωρίς", "περιτομή", "ἀκροβυστία", "δικαιόω"] },
+    { g: "ναί, νυνὶ λογίζομαι ταῦτα μετὰ παρρησίας.", e: "Yes, now I reckon these things with boldness.", uses: ["ναί", "νυνί", "λογίζομαι", "παρρησία"] },
+    { g: "ὁ πτωχὸς ὑστερεῖ· ἔξεστιν οὖν διακονίαν ποιεῖν αὐτῷ.", e: "The poor man lacks; so it is lawful to do him service.", uses: ["πτωχός", "ὑστερέω", "ἔξεστιν", "διακονία"] },
+    { g: "ὁ δυνατὸς καταργεῖ τὸν ἐχθρὸν καὶ τὴν ὀργήν.", e: "The mighty one nullifies the enemy and the wrath.", uses: ["δυνατός", "καταργέω", "ἐχθρός", "ὀργή"] },
+    { g: "Φίλιππος παραγίνεται ἐγγὺς καὶ ὑποστρέφει.", e: "Philip arrives nearby and turns back.", uses: ["Φίλιππος", "παραγίνομαι", "ἐγγύς", "ὑποστρέφω"] },
+    { g: "τὸ οὖς μέλος ἐστίν· οὐκ ἀρνοῦμαι ὃ ὁ θεὸς φανεροῖ.", e: "The ear is a member; I do not deny what God reveals.", uses: ["οὖς", "μέλος", "ἀρνέομαι", "φανερόω"] },
+    { g: "ποῦ καὶ ποίῳ τρόπῳ; πλὴν πιστεύω, διότι ὁ θεὸς λέγει.", e: "Where, and in what kind of way? Yet I believe, because God speaks.", uses: ["ποῦ", "ποῖος", "πλήν", "διότι"] },
+  ] },
+  { chapter: 4, items: [
+    { g: "ἀγοράζει ἀρνίον εἰς θυσίαν τοῦ πάσχα.", e: "He buys a lamb for the Passover sacrifice.", uses: ["ἀγοράζω", "ἀρνίον", "θυσία", "πάσχα"] },
+    { g: "ἅπαξ ἐπικαλοῦμαι τὸν σωτῆρα, καὶ ἔχω σωτηρίαν.", e: "Once and for all I call upon the savior, and I have salvation.", uses: ["ἅπαξ", "ἐπικαλέω", "σωτήρ", "σωτηρία"] },
+    { g: "ἐλεεῖ ἡμᾶς· τὸ ἔλεος αὐτοῦ παράκλησις τῇ συνειδήσει.", e: "He has mercy on us; his mercy is comfort to the conscience.", uses: ["ἐλεέω", "ἔλεος", "παράκλησις", "συνείδησις"] },
+    { g: "Ἰάκωβος καὶ Ἰούδας καὶ Βαρναβᾶς φίλοι εἰσίν.", e: "James and Jude and Barnabas are friends.", uses: ["Ἰάκωβος", "Ἰούδας", "Βαρναβᾶς", "φίλος"] },
+    { g: "ὁ τοῦ Καίσαρος δοῦλος μαχαίρᾳ φυλάσσει, καὶ φόβος ἐστίν.", e: "Caesar's servant guards with a sword, and there is fear.", uses: ["Καῖσαρ", "μάχαιρα", "φυλάσσω", "φόβος"] },
+    { g: "μισεῖ καὶ ἀδικεῖ καὶ σκανδαλίζει· διὸ ἐπιτιμῶ αὐτῷ.", e: "He hates and does wrong and causes stumbling; so I rebuke him.", uses: ["μισέω", "ἀδικέω", "σκανδαλίζω", "ἐπιτιμάω"] },
+    { g: "γαμεῖ τὴν θυγατέρα ἐκ τῆς φυλῆς καὶ δίδωσιν μισθόν.", e: "He marries the daughter from the tribe and gives a payment.", uses: ["γαμέω", "θυγάτηρ", "φυλή", "μισθός"] },
+    { g: "ἡ ἐπιθυμία ἐν τῷ σκότει ἁρπάζει· ἀνάγκη ἐστὶν φυγεῖν.", e: "Desire snatches in the darkness; there is a necessity to flee.", uses: ["ἐπιθυμία", "σκότος", "ἁρπάζω", "ἀνάγκη"] },
+    { g: "ἡγοῦμαι τὴν γνῶσιν ἀληθινήν, καὶ διακρίνω τὰ πάντα.", e: "I consider the knowledge genuine, and I judge all things.", uses: ["ἡγέομαι", "γνῶσις", "ἀληθινός", "διακρίνω"] },
+    { g: "ἴδε, ἃ ποτὲ ἦν παρέρχεται· μιμνῄσκομαι δὲ αὐτῶν.", e: "Behold, what once was passes away; but I remember it.", uses: ["ἴδε", "ποτέ", "παρέρχομαι", "μιμνῄσκομαι"] },
+  ] },
+  { chapter: 5, items: [
+    { g: "ἐν τῷ γάμῳ ὁ νυμφίος γεύεται τὸν οἶνον.", e: "At the wedding the bridegroom tastes the wine.", uses: ["γάμος", "νυμφίος", "γεύομαι", "οἶνος"] },
+    { g: "Μαρία καὶ Μαριὰμ φωνοῦσιν· ἥκει ὁ κύριος.", e: "Mary and Mariam call out: the Lord has come.", uses: ["Μαρία", "Μαριάμ", "φωνέω", "ἥκω"] },
+    { g: "πόθεν καὶ πόσον; γνωρίζει ὁ θεὸς τὸ μυστήριον.", e: "From where, and how much? God makes the mystery known.", uses: ["πόθεν", "πόσος", "γνωρίζω", "μυστήριον"] },
+    { g: "βαστάζει τὸν σταυρόν· ὁ στρατιώτης οὐ νικᾷ αὐτόν.", e: "He bears the cross; the soldier does not overcome him.", uses: ["βαστάζω", "σταυρός", "στρατιώτης", "νικάω"] },
+    { g: "ἡ χήρα δέκα ἔτη ἀσθενὴς οὖσα δουλεύει.", e: "The widow, weak for ten years, serves on.", uses: ["χήρα", "δέκα", "ἀσθενής", "δουλεύω"] },
+    { g: "ὁ διάκονος καθαρός ἐστιν καὶ ἀληθής, καὶ συνίει.", e: "The servant is clean and honest, and he understands.", uses: ["διάκονος", "καθαρός", "ἀληθής", "συνίημι"] },
+    { g: "ἕνεκα τῆς ἀδικίας ἐκχέει δάκρυα καὶ λυπεῖ.", e: "On account of the injustice he pours out tears and grieves.", uses: ["ἕνεκα", "ἀδικία", "ἐκχέω", "λυπέω"] },
+    { g: "τὸ δένδρον κεῖται· ἄρτι ἀναβλέπω πρὸς τὸν οὐρανόν.", e: "The tree lies fallen; now I look up toward heaven.", uses: ["δένδρον", "κεῖμαι", "ἄρτι", "ἀναβλέπω"] },
+    { g: "Ἰακὼβ καὶ ὁ Ἕλλην προφητεύουσιν πνευματικά.", e: "Jacob and the Greek prophesy spiritual things.", uses: ["Ἰακώβ", "Ἕλλην", "προφητεύω", "πνευματικός"] },
+    { g: "τὸ σόν γε ἔργον φρονεῖς καὶ τελεῖς.", e: "Your own work, at least, you ponder and finish.", uses: ["σός", "γέ", "φρονέω", "τελέω"] },
+  ] },
+];
