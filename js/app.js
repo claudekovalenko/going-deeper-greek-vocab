@@ -1770,10 +1770,25 @@ function renderSettings() {
 }
 
 // ---------------- boot ----------------
+// Coming back to the app is the natural moment to collect anything waiting,
+// so an open tab picks rewrites up without being asked.
+let lastPull = 0;
+async function pullIfDue() {
+  if (Date.now() - lastPull < 20000) return;
+  lastPull = Date.now();
+  const n = await pullSync();
+  if (!n) return;
+  deck = null; session = null; quiz = null;
+  show(currentView);
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pullIfDue(); });
+window.addEventListener("focus", () => pullIfDue());
+
 setAppTitle();
 loadHints().then(async () => {
   show("home");
   // Anything rewritten since last time lands now, without being asked for.
+  lastPull = Date.now();
   const n = await pullSync();
   if (n) { deck = null; session = null; quiz = null; if (currentView === "home") renderHome(); }
   pushSync();
