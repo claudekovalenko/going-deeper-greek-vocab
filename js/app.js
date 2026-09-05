@@ -42,7 +42,8 @@ const DEFAULT_SETTINGS = {
   tiers: { memorize: true, recognize: true },
   enabledSets: {},           // setId -> bool (default true)
   setChapter: {},            // setId -> chapter number, overriding the built-in one
-  chapter: null,             // null = every chapter; a number = that chapter only
+  chapter: null,             // null = every chapter; a number = that one
+  chapterMode: "only",       // "only" = just that chapter; "upto" = it and everything before
   quizSize: 10,
   pron: "koine"              // koine | erasmian | modern
 };
@@ -669,14 +670,25 @@ function chapterMarkup() {
   const cur = settings.chapter ?? null, newest = newestChapter();
   const pill = (v, label) =>
     `<button class="pill ${v === cur ? "on" : ""}" data-ch="${v === null ? "all" : v}">${label}</button>`;
+  const mode = settings.chapterMode === "upto" ? "upto" : "only";
+  const scope = cur == null ? "" : `<div class="pill-row scope-row" id="ch-scope">
+      <button class="pill ${mode === "only" ? "on" : ""}" data-scope="only">Chapter ${cur} only</button>
+      <button class="pill ${mode === "upto" ? "on" : ""}" data-scope="upto">Everything up to ${cur}</button>
+    </div>`;
   return `<div class="pill-row" id="chapters">
       ${pill(null, "All chapters")}
       ${chapters().map(c => pill(c, `Chapter ${c}${c === newest ? " \u00b7 new" : ""}`)).join("")}
-    </div>`;
+    </div>${scope}`;
 }
 function mountChapters(after) {
   view.querySelectorAll("#chapters .pill").forEach(b => b.onclick = () => {
     setChapterFilter(b.dataset.ch === "all" ? null : Number(b.dataset.ch));
+    after();
+  });
+  view.querySelectorAll("#ch-scope .pill").forEach(b => b.onclick = () => {
+    settings.chapterMode = b.dataset.scope;
+    saveSettings();
+    session = null; deck = null; quiz = null;   // the pool changed
     after();
   });
 }
@@ -692,7 +704,12 @@ function activeWords() {
   const out = [];
   for (const set of allSets()) {
     if (settings.enabledSets[set.id] === false) continue;
-    if (settings.chapter != null && chapterOf(set) !== settings.chapter) continue;
+    if (settings.chapter != null) {
+      const c = chapterOf(set);
+      // "upto" is for refreshing everything learned so far, not just the new lesson.
+      if (c == null) continue;
+      if (settings.chapterMode === "upto" ? c > settings.chapter : c !== settings.chapter) continue;
+    }
     for (const w of set.words) {
       if (!settings.tiers[w.tier ?? "memorize"]) continue;
       out.push({ ...w, setId: set.id, setTitle: set.title, id: wordId(set.id, w) });
@@ -818,7 +835,9 @@ function renderHome() {
       ${chapterMarkup()}
       <p class="muted">${settings.chapter == null
         ? `Every chapter is in the deck \u2014 ${words.length} words.`
-        : `Chapter ${settings.chapter} only \u2014 ${words.length} words.`}</p>
+        : settings.chapterMode === "upto"
+          ? `Chapters up to ${settings.chapter} \u2014 ${words.length} words.`
+          : `Chapter ${settings.chapter} only \u2014 ${words.length} words.`}</p>
       ${tierModeMarkup()}
       <p class="muted">${
         tierMode() === "both" ? "Both tiers are in the deck."

@@ -266,3 +266,5 @@ textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
 .sent-g { font-size: 1.15rem; line-height: 1.5; }
 .sent-e { color: var(--muted); font-size: .95rem; line-height: 1.45; margin-top: 6px; }
 .sent-uses { font-size: .78rem; color: var(--accent-2); margin-top: 6px; opacity: .85; }
+.scope-row { margin-top: -2px; }
+.scope-row .pill { font-size: .74rem; padding: 5px 12px; }
