@@ -383,6 +383,7 @@ textarea, input[type="text"], input[type="search"], select { font-size: 16px; }
 
 
 
+
 <header id="topbar">
   <h1 id="app-title"><span class="om">Ω</span>Koine Vocab</h1>
   <button id="btn-settings" class="icon-btn" title="Settings">Settings</button>
@@ -685,6 +686,74 @@ const VOCAB_SETS = [
       { g: "ὑδρία, ἡ", gloss: "water jar", freq: 3, tier: "recognize" },
       { g: "χωρέω", gloss: "I contain", freq: 10, tier: "recognize" },
     ]
+  },
+  {
+    id: "gd-set-05",
+    source: "Going Deeper with New Testament Greek",
+    chapter: 6,
+    title: "Chapter 6 — Vocabulary",
+    words: [
+      // ---- Vocabulary to Memorize ----
+      { g: "ἁμαρτωλός, ὁ", gloss: "sinner", freq: 47, tier: "memorize", icon: "🙇", mn: "hah-mahr-to-LOS ≈ \"ha-MAR-to-LOSS.\" He marred it, and it is his loss — ἁμαρτία is missing the mark: a SINNER." },
+      { g: "ἀμπελών, -ῶνος, ὁ", gloss: "vineyard", freq: 23, tier: "memorize", icon: "🍇", mn: "ahm-peh-LON ≈ \"AMPLE-LAWN.\" An ample lawn of vines: the VINEYARD." },
+      { g: "ἀνάγω", gloss: "I lead up, restore", freq: 23, tier: "memorize", icon: "⛰️", mn: "ah-NAH-gho ≈ \"a-NA-go.\" ἀνά up + ἄγω lead: I LEAD UP, I bring back — and at sea, I set sail." },
+      { g: "ἀναιρέω", gloss: "I take away, destroy, kill", freq: 24, tier: "memorize", icon: "🗡️", mn: "ah-neh-REH-o ≈ \"a-NAIR-AY-o.\" ἀνά up + αἱρέω take — he takes it up and away for good: I DESTROY, I KILL." },
+      { g: "ἄπιστος", gloss: "faithless, unbelieving", freq: 23, tier: "memorize", icon: "🚫", mn: "AH-pees-tos ≈ \"AH-PEACE-toss.\" Peace tossed out — ἀ- not + πίστις faith: FAITHLESS, unbelieving." },
+      { g: "ἀσθένεια, ἡ", gloss: "weakness, sickness, disease", freq: 24, tier: "memorize", icon: "🤒", mn: "ahs-THEH-nee-ah ≈ \"as-THEN-ee-ah.\" Our ASTHENIA: WEAKNESS, sickness." },
+      { g: "ἀσθενέω", gloss: "I am weak, sick, in need", freq: 33, tier: "memorize", icon: "🛌", mn: "ahs-theh-NEH-o ≈ \"as-THEN-AY-o.\" The verb of the same root: I AM WEAK, sick, in need." },
+      { g: "ἀστήρ, -έρος, ὁ", gloss: "star", freq: 24, tier: "memorize", icon: "⭐", mn: "ahs-TAYR ≈ \"a-STARE.\" You stare up at it — and it is our ASTERisk: a STAR." },
+      { g: "αὐξάνω", gloss: "I grow, increase", freq: 23, tier: "memorize", icon: "🌱", mn: "av-XAH-no ≈ \"av-ZA-no.\" Our AUGment and AUXiliary, both added on: I GROW, INCREASE." },
+      { g: "δέησις, -εως, ἡ", gloss: "prayer, entreaty, petition", freq: 18, tier: "memorize", icon: "🙏", mn: "theh-AY-sees ≈ \"the-A-sees.\" The one who sees the need is asked: a PETITION, an entreaty." },
+      { g: "εἰκών, -όνος, ἡ", gloss: "image, likeness, form", freq: 23, tier: "memorize", icon: "🖼️", mn: "ee-KON ≈ \"ee-CON.\" An ICON is exactly this: an IMAGE, a likeness." },
+      { g: "ἐλεύθερος", gloss: "free", freq: 23, tier: "memorize", icon: "🕊️", mn: "eh-LEV-theh-ros ≈ \"a-LEV-thuh-ros.\" No chain on him at all: FREE." },
+      { g: "ἐνεργέω", gloss: "I work, produce", freq: 21, tier: "memorize", icon: "⚡", mn: "eh-nehr-GHEH-o ≈ \"en-ER-GAY-o.\" Our ENERGY, put to use: I WORK, I PRODUCE." },
+      { g: "ἑορτή, ἡ", gloss: "festival", freq: 25, tier: "memorize", icon: "🎉", mn: "heh-or-TAY ≈ \"he-or-TAY.\" Hey, or tay — everyone is out dancing: the FESTIVAL." },
+      { g: "ἐπιστολή, ἡ", gloss: "letter, epistle", freq: 24, tier: "memorize", icon: "✉️", mn: "eh-pees-to-LAY ≈ \"a-PIS-to-LAY.\" Our EPISTLE, laid in your hand: a LETTER." },
+      { g: "ἐπιστρέφω", gloss: "I turn (around/back), return", freq: 36, tier: "memorize", icon: "↩️", mn: "eh-pees-TREH-fo ≈ \"a-PIECE-TREF-o.\" ἐπί upon + στρέφω turn: I TURN AROUND, I RETURN." },
+      { g: "Ἠλίας, ὁ", gloss: "Elijah", freq: 29, tier: "memorize", icon: "🔥", mn: "ay-LEE-ahs ≈ \"ay-LEE-as.\" Say it and the prophet is already there: ELIJAH." },
+      { g: "ἰάομαι", gloss: "I heal, cure, restore", freq: 26, tier: "memorize", icon: "🩹", mn: "ee-AH-o-meh ≈ \"ee-AH-o-may.\" Our PSYCHIATRy and PEDIATRics hold this root: I HEAL, I CURE." },
+      { g: "ἰσχύω", gloss: "I am strong, powerful, able", freq: 28, tier: "memorize", icon: "💪", mn: "ees-KHEW-o ≈ \"EES-KHEW-o\" (rasped: kh). The verb beside ἰσχυρός: I AM STRONG, I am able." },
+      { g: "καταλείπω", gloss: "I leave (behind), abandon, neglect", freq: 24, tier: "memorize", icon: "🚪", mn: "kah-tah-LEE-po ≈ \"ka-ta-LEAP-o.\" He leaps away and it stays where it fell: I LEAVE BEHIND, abandon." },
+      { g: "κελεύω", gloss: "I command, order, urge", freq: 25, tier: "memorize", icon: "📣", mn: "keh-LEV-o ≈ \"ke-LEV-o.\" He levels an order at you: I COMMAND, I ORDER." },
+      { g: "κρίσις, -εως, ἡ", gloss: "judgment, condemnation", freq: 47, tier: "memorize", icon: "⚖️", mn: "KREE-sees ≈ \"CRISIS.\" A CRISIS is the moment of decision — and here the verdict: JUDGMENT." },
+      { g: "λευκός", gloss: "white, bright, shining", freq: 25, tier: "memorize", icon: "🤍", mn: "lev-KOS ≈ \"LEV-KOSS.\" LEUKemia is named for the white cells: WHITE, shining." },
+      { g: "μανθάνω", gloss: "I learn", freq: 25, tier: "memorize", icon: "📚", mn: "mahn-THAH-no ≈ \"man-THA-no.\" A MATHematician was first simply a learner: I LEARN." },
+      { g: "μήν, -ος, ὁ", gloss: "month, new moon", freq: 18, tier: "memorize", icon: "🌙", mn: "MAYN ≈ \"MAIN.\" The main measure of a MONTH is the new moon." },
+      { g: "μήποτε", gloss: "never, lest", freq: 25, tier: "memorize", icon: "🚷", mn: "MAY-po-teh ≈ \"MAY-po-tay.\" May it not, ever — NEVER; LEST it happen." },
+      { g: "μήτε", gloss: "and not, nor", freq: 34, tier: "memorize", icon: "➖", mn: "MAY-teh ≈ \"MAY-tay.\" May-tay, nor this either: AND NOT, NOR." },
+      { g: "νεφέλη, ἡ", gloss: "cloud", freq: 25, tier: "memorize", icon: "☁️", mn: "neh-FEH-lay ≈ \"ne-FELL-ay.\" NEBULous, and the rain fell from it: a CLOUD." },
+      { g: "νοῦς, νοός, ὁ", gloss: "mind, understanding", freq: 24, tier: "memorize", icon: "🧠", mn: "NOOS ≈ \"NOOSE.\" A noose around your thinking — and the νοῦς is the MIND itself." },
+      { g: "ὀμνύω", gloss: "I swear, take an oath", freq: 26, tier: "memorize", icon: "✋", mn: "om-NEW-o ≈ \"om-NEW-o.\" He starts over with a new vow: I SWEAR, I take an OATH." },
+      { g: "παῖς, παιδός, ὁ/ἡ", gloss: "boy, child, son, servant", freq: 24, tier: "memorize", icon: "👦", mn: "PEHS ≈ \"PACE.\" PEDiatrics and PEDagogue are both built on him: the CHILD, the servant." },
+      { g: "πάρειμι", gloss: "I am present, have come", freq: 24, tier: "memorize", icon: "📍", mn: "PAH-ree-mee ≈ \"PA-ree-me.\" παρά beside + εἰμί I am: I AM PRESENT, I have come." },
+      { g: "παρουσία, ἡ", gloss: "coming, arrival", freq: 24, tier: "memorize", icon: "👑", mn: "pah-roo-SEE-ah ≈ \"pa-roo-SEE-ah.\" The PAROUSIA itself — his ARRIVAL, his coming." },
+      { g: "πίμπλημι", gloss: "I fill, fulfill", freq: 24, tier: "memorize", icon: "🥛", mn: "PEEM-play-mee ≈ \"PIMP-LAY-me.\" Fill it to the brim and lay it down: I FILL, I FULFILL." },
+      { g: "πλῆθος, -ους, τό", gloss: "multitude, large amount, crowd", freq: 31, tier: "memorize", icon: "👥", mn: "PLAY-thos ≈ \"PLAY-thoss.\" PLETHOra is our word for it: a MULTITUDE, a crowd." },
+      { g: "πορνεία, ἡ", gloss: "(sexual) immorality", freq: 25, tier: "memorize", icon: "⛔", mn: "por-NEE-ah ≈ \"por-NEE-ah.\" PORNography is named from it: sexual IMMORALITY." },
+      { g: "προσευχή, ἡ", gloss: "prayer", freq: 36, tier: "memorize", icon: "🙏", mn: "pro-sev-KHAY ≈ \"pro-sev-KHAY\" (rasped: kh). πρός toward + εὐχή vow — turned toward God: PRAYER." },
+      { g: "προσέχω", gloss: "I pay attention to, devote myself to", freq: 24, tier: "memorize", icon: "👁️", mn: "pro-SEH-kho ≈ \"pro-SEK-o\" (rasped: kh). πρός toward + ἔχω hold — hold your mind toward it: I PAY ATTENTION." },
+      { g: "προσκαλέω", gloss: "I summon, call, invite", freq: 29, tier: "memorize", icon: "📞", mn: "pros-kah-LEH-o ≈ \"pros-ka-LAY-o.\" πρός toward + καλέω call: I CALL YOU OVER, I SUMMON." },
+      { g: "Τιμόθεος, ὁ", gloss: "Timothy", freq: 24, tier: "memorize", icon: "🧑", mn: "tee-MO-theh-os ≈ \"tee-MO-the-os.\" τιμή honour + θεός God — one who honours God: TIMOTHY." },
+      // ---- Vocabulary to Recognize ----
+      // ἕξ and ἐξομολογέω are printed here too, but are already in
+      // earlier chapters, so they are not repeated as new entries.
+      { g: "ἀλείφω", gloss: "I anoint", freq: 9, tier: "recognize" },
+      { g: "βλαστάνω", gloss: "I produce, sprout", freq: 4, tier: "recognize" },
+      { g: "βρέχω", gloss: "it rains (impers.); I send rain", freq: 7, tier: "recognize" },
+      { g: "ἔλαιον, τό", gloss: "(olive) oil", freq: 11, tier: "recognize" },
+      { g: "ἐνιαυτός, ὁ", gloss: "year, era", freq: 14, tier: "recognize" },
+      { g: "εὐθυμέω", gloss: "I am cheerful", freq: 3, tier: "recognize" },
+      { g: "εὐχή, ἡ", gloss: "prayer, oath, vow", freq: 3, tier: "recognize" },
+      { g: "εὔχομαι", gloss: "I pray, wish", freq: 7, tier: "recognize" },
+      { g: "κακοπαθέω", gloss: "I suffer hardship", freq: 3, tier: "recognize" },
+      { g: "καλύπτω", gloss: "I cover, hide, conceal", freq: 8, tier: "recognize" },
+      { g: "κάμνω", gloss: "I am weary, ill", freq: 2, tier: "recognize" },
+      { g: "ὁμοιοπαθής, -ες", gloss: "with the same nature, like in every way", freq: 2, tier: "recognize" },
+      { g: "ὅρκος, ὁ", gloss: "oath", freq: 10, tier: "recognize" },
+      { g: "πλάνη, ἡ", gloss: "wandering, error, deception", freq: 10, tier: "recognize" },
+      { g: "ὑετός, ὁ", gloss: "rain", freq: 5, tier: "recognize" },
+      { g: "ψάλλω", gloss: "I sing (praise), make melody", freq: 5, tier: "recognize" },
+    ]
   }
 ];
 
@@ -738,6 +807,18 @@ const SENTENCE_SETS = [
     { g: "τὸ δένδρον κεῖται· ἄρτι ἀναβλέπω πρὸς τὸν οὐρανόν.", e: "The tree lies fallen; now I look up toward heaven.", uses: ["δένδρον", "κεῖμαι", "ἄρτι", "ἀναβλέπω"] },
     { g: "Ἰακὼβ καὶ ὁ Ἕλλην προφητεύουσιν πνευματικά.", e: "Jacob and the Greek prophesy spiritual things.", uses: ["Ἰακώβ", "Ἕλλην", "προφητεύω", "πνευματικός"] },
     { g: "τὸ σόν γε ἔργον φρονεῖς καὶ τελεῖς.", e: "Your own work, at least, you ponder and finish.", uses: ["σός", "γέ", "φρονέω", "τελέω"] },
+  ] },
+  { chapter: 6, items: [
+    { g: "ὁ ἁμαρτωλὸς ἄπιστός ἐστιν, ἀλλὰ ἐπιστρέφει καὶ μανθάνει.", e: "The sinner is unbelieving, but he turns back and learns.", uses: ["ἁμαρτωλός", "ἄπιστος", "ἐπιστρέφω", "μανθάνω"] },
+    { g: "ἐν τῷ ἀμπελῶνι αὐξάνει ὁ καρπός· ὁ δὲ δοῦλος καταλείπει αὐτόν.", e: "In the vineyard the fruit grows; but the servant leaves it behind.", uses: ["ἀμπελών", "αὐξάνω", "καταλείπω", "παῖς"] },
+    { g: "Ἠλίας ἀνάγει τὸν παῖδα καὶ ἰᾶται αὐτόν.", e: "Elijah leads the boy up and heals him.", uses: ["Ἠλίας", "ἀνάγω", "ἰάομαι", "παῖς"] },
+    { g: "ἡ ἀσθένεια μεγάλη· ἀσθενεῖ γάρ, καὶ οὐκ ἰσχύει.", e: "The sickness is great, for he is weak and is not strong.", uses: ["ἀσθένεια", "ἀσθενέω", "ἰσχύω", "κρίσις"] },
+    { g: "ὁ ἀστὴρ λευκὸς ἐν τῇ νεφέλῃ φαίνεται ἕκαστον μῆνα.", e: "The star shines white in the cloud each month.", uses: ["ἀστήρ", "λευκός", "νεφέλη", "μήν"] },
+    { g: "ἡ δέησις καὶ ἡ προσευχὴ πρὸς τὸν θεόν· προσέχομεν οὖν.", e: "The petition and the prayer are toward God; so we pay attention.", uses: ["δέησις", "προσευχή", "προσέχω", "ἐνεργέω"] },
+    { g: "ἡ εἰκὼν ἐλευθέρα· μήτε δοῦλος μήποτε αὐτὴν ἀναιρεῖ.", e: "The image is free; and no slave ever destroys it.", uses: ["εἰκών", "ἐλεύθερος", "μήτε", "μήποτε", "ἀναιρέω"] },
+    { g: "ἐν τῇ ἑορτῇ πλῆθος πάρεστιν, καὶ ὁ νοῦς πίμπλαται χαρᾶς.", e: "At the festival a multitude is present, and the mind is filled with joy.", uses: ["ἑορτή", "πλῆθος", "πάρειμι", "νοῦς", "πίμπλημι"] },
+    { g: "Τιμόθεος τὴν ἐπιστολὴν ἀναγινώσκει περὶ τῆς παρουσίας.", e: "Timothy reads the letter about the coming.", uses: ["Τιμόθεος", "ἐπιστολή", "παρουσία"] },
+    { g: "κελεύει καὶ προσκαλεῖται αὐτούς· ὀμνύουσιν δὲ φυγεῖν τὴν πορνείαν.", e: "He orders and summons them; and they swear to flee immorality.", uses: ["κελεύω", "προσκαλέω", "ὀμνύω", "πορνεία"] },
   ] },
 ];
 
