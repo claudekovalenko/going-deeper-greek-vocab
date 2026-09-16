@@ -388,9 +388,14 @@ function pushSync() {
 }
 
 /** Take any waiting replacements and apply them, clearing the Replace mark. */
-async function pullSync() {
+async function pullSync({ quiet = true } = {}) {
   let body;
-  try { body = await syncCall({ action: "pull" }); } catch { return 0; }
+  try {
+    body = await syncCall({ action: "pull" });
+  } catch (e) {
+    if (quiet) return 0;
+    throw e;            // the button wants to say what went wrong
+  }
   const list = Array.isArray(body.replacements) ? body.replacements : [];
   let applied = 0;
   for (const r of list) {
@@ -1313,7 +1318,8 @@ function renderRedo() {
       <button class="btn secondary" id="copy">Copy the prompt for Claude</button>
       <button class="btn secondary" id="fetch">Check for rewrites</button>
       <p class="muted" style="margin-top:8px">These marks are synced, so a rewrite can be prepared
-        for you and applied the next time you open the app. Pictures never leave this phone.</p>
+        for you and applied the next time you open the app. Pictures never leave this phone.<br>
+        <span style="opacity:.6">This device: <code>${esc(deviceId())}</code></span></p>
       <div id="copy-fb"></div>
     </div>
     <div class="card-panel">
@@ -1380,11 +1386,14 @@ function renderRedo() {
   view.querySelector("#fetch").onclick = async () => {
     const btn = view.querySelector("#fetch"), fb = view.querySelector("#copy-fb");
     btn.disabled = true; btn.textContent = "Checking\u2026";
-    const n = await pullSync();
+    let n = 0, err = null;
+    try { n = await pullSync({ quiet: false }); } catch (e) { err = e; }
     btn.disabled = false; btn.textContent = "Check for rewrites";
-    fb.innerHTML = n
-      ? `<div class="feedback ok">Applied ${n} rewritten ${n === 1 ? "mnemonic" : "mnemonics"}.</div>`
-      : `<div class="feedback">Nothing waiting yet.</div>`;
+    fb.innerHTML = err
+      ? `<div class="feedback no">Could not reach the server: ${esc(err.message)}</div>`
+      : n
+        ? `<div class="feedback ok">Applied ${n} rewritten ${n === 1 ? "mnemonic" : "mnemonics"}.</div>`
+        : `<div class="feedback">Nothing waiting for this device yet.</div>`;
     if (n) setTimeout(renderRedo, 900);
   };
 
