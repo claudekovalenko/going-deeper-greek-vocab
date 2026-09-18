@@ -175,7 +175,7 @@ const VOCAB_SETS = [
       { g: "θυγάτηρ, -τρός, ἡ", gloss: "daughter, girl", freq: 28, tier: "memorize", icon: "👧", mn: "thew-GHAH-tayr ≈ \"THEW-GATOR.\" Daddy’s little GATOR, all teeth and trouble: the DAUGHTER." },
       { g: "θυσία, ἡ", gloss: "sacrifice, offering", freq: 28, tier: "memorize", icon: "🔥", mn: "thew-SEE-ah ≈ \"THEW-SEE-ya.\" One last see-ya as it goes up in smoke: the SACRIFICE, the offering." },
       { g: "Ἰάκωβος, ὁ", gloss: "James", freq: 42, tier: "memorize", icon: "🧔", mn: "ee-ah-KO-vos ≈ \"ee-a-CO-VOS.\" Jacob in Greek dress — which English turned into JAMES." },
-      { g: "ἴδε", gloss: "look, see, behold", freq: 29, tier: "memorize", icon: "👀", mn: "EE-theh ≈ \"EE-THE.\" One syllable and a pointing finger: LOOK!" },
+      { g: "ἴδε", gloss: "look, see, behold", freq: 29, tier: "memorize", icon: "👀", mn: "EE-theh ≈ \"EE-ther\" — EITHER, said the American way. Either you look now or you miss him: LOOK! BEHOLD. (Spelled ἴδ-, the root under IDEA — a thing seen.)" },
       { g: "Ἰούδας, ὁ", gloss: "Jude, Judah, Judas", freq: 44, tier: "memorize", icon: "🪙", mn: "ee-OO-thahs ≈ \"ee-OO-THAHS.\" One name for all three: JUDAS, Jude, Judah." },
       { g: "Καῖσαρ, -αρος, ὁ", gloss: "Caesar, emperor", freq: 29, tier: "memorize", icon: "👑", mn: "KEH-sahr ≈ \"KAY-SAR.\" Not \"see-zer\" — Koine αι is \"eh\": CAESAR." },
       { g: "μάχαιρα, ἡ", gloss: "sword", freq: 29, tier: "memorize", icon: "🗡️", mn: "mah-KHEH-rah ≈ \"ma-KHEH-rah\" (rasped: kh). Russian махать, to wave — she waves the blade: the SWORD." },
