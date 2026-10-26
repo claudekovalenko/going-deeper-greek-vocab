@@ -664,7 +664,9 @@ function setLabel(set) {
   const c = chapterOf(set);
   return c == null ? name : `Chapter ${c} \u2014 ${name}`;
 }
-function newestChapter() { const c = chapters(); return c.length ? c[c.length - 1] : null; }
+// The chapter being worked on now, which isn't always the highest number added.
+const CURRENT_CHAPTER = 6;
+function newestChapter() { return chapters().includes(CURRENT_CHAPTER) ? CURRENT_CHAPTER : null; }
 
 function setChapterFilter(v) {
   settings.chapter = v;
