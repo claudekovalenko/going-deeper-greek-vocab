@@ -665,7 +665,7 @@ function setLabel(set) {
   return c == null ? name : `Chapter ${c} \u2014 ${name}`;
 }
 // The chapter being worked on now, which isn't always the highest number added.
-const CURRENT_CHAPTER = 6;
+const CURRENT_CHAPTER = 7;
 function newestChapter() { return chapters().includes(CURRENT_CHAPTER) ? CURRENT_CHAPTER : null; }
 
 function setChapterFilter(v) {
