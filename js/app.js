@@ -45,7 +45,7 @@ const DEFAULT_SETTINGS = {
   chapter: null,             // null = every chapter; a number = that one
   chapterMode: "only",       // "only" = just that chapter; "upto" = it and everything before
   quizSize: 10,
-  pron: "koine"              // koine | erasmian | modern
+  pron: "polis"              // polis | koine | erasmian | modern
 };
 let settings = store.load(keyFor(LS_SETTINGS), { ...DEFAULT_SETTINGS });
 let customSets = store.load(keyFor(LS_CUSTOM), []);
@@ -150,6 +150,15 @@ const KOINE = {
   digraph: { αι:"eh", ει:"ee", οι:"ew", υι:"ew", αυ:"av", ευ:"ev", ηυ:"ev", ου:"oo" }
 };
 
+// Polis Institute living Koine: ω is a long o (distinct from short ο), υ is "oo",
+// and diphthongs are real vowel glides rather than collapsed monophthongs.
+const POLIS = {
+  single: { α:"ah", ε:"eh", η:"ay", ι:"ee", ο:"o", υ:"oo", ω:"oh",
+            β:"v", γ:"gh", δ:"dh", ζ:"z", θ:"th", κ:"k", λ:"l", μ:"m", ν:"n",
+            ξ:"x", π:"p", ρ:"r", σ:"s", ς:"s", τ:"t", φ:"f", χ:"kh", ψ:"ps" },
+  digraph: { αι:"ah-ee", ει:"eh-ee", οι:"oh-ee", υι:"oo-ee", αυ:"ah-oo", ευ:"eh-oo", ηυ:"ay-oo", ου:"oo" }
+};
+
 const MODERN = {
   single: { α:"ah", ε:"eh", η:"ee", ι:"ee", ο:"o", υ:"ee", ω:"o",
             β:"v", γ:"gh", δ:"th", ζ:"z", θ:"th", κ:"k", λ:"l", μ:"m", ν:"n",
@@ -171,7 +180,7 @@ function join(out, chunk) {
   return out + chunk;
 }
 
-const SCHEMES = { koine: KOINE, modern: MODERN, erasmian: ERASMIAN };
+const SCHEMES = { polis: POLIS, koine: KOINE, modern: MODERN, erasmian: ERASMIAN };
 
 function translit(word, scheme) {
   const map = SCHEMES[scheme] || KOINE;
@@ -222,7 +231,7 @@ function greekVoice() {
 //   erasmian — always a respelling, since no voice on earth speaks Erasmian
 //   modern   — real Greek if a Greek voice exists, else a respelling
 function speechPlan(greek) {
-  const scheme = settings.pron || "koine";
+  const scheme = settings.pron || "polis";
   const gv = scheme === "modern" ? greekVoice() : null;
   return gv
     ? { text: greek, voice: gv, lang: gv.lang }
@@ -369,7 +378,7 @@ function syncPayload() {
       if (!h.vote && !h.wish && !h.mn) continue;
       out[id] = {
         greek: w.g, gloss: w.gloss, chapter: chapterOf(set) ?? null,
-        say: translit(headword(w.g), settings.pron || "koine"),
+        say: translit(headword(w.g), settings.pron || "polis"),
         mn: h.mn || w.mn || "", vote: h.vote || 0, wish: h.wish || ""
       };
     }
@@ -477,7 +486,7 @@ function hintPrompt(w) {
   const lines = hookLines(w);
   return `I am learning New Testament Greek. Help me remember this word:\n\n` +
     `Greek: ${w.g}\nMeaning: ${w.gloss}\n` +
-    `Pronounced (Koine): ${translit(headword(w.g), settings.pron || "koine")}\n` +
+    `Pronounced: ${translit(headword(w.g), settings.pron || "polis")}\n` +
     (lines.length ? `\nMnemonics I already have:\n${lines.map(l => "- " + l).join("\n")}\n` : "") +
     `\nGive me 3 more memory hooks. Base each one on how the word SOUNDS when said aloud: ` +
     `English words that sound like those syllables, worked into a vivid image that carries the meaning. ` +
@@ -1231,7 +1240,7 @@ function renderBrowse() {
 // and a paste back. The reply format is one word per line, which is easy for
 // Claude to produce and unambiguous to parse.
 function redoPrompt(words) {
-  const scheme = settings.pron || "koine";
+  const scheme = settings.pron || "polis";
   return `I am learning New Testament Greek and these mnemonics are not working for me. ` +
     `Write me a better one for each word.\n\n` +
     `Rules:\n` +
@@ -1567,7 +1576,8 @@ function renderSettings() {
     <div class="card-panel">
       <h2>Pronunciation</h2>
       <div class="pill-row" id="pron">
-        <button class="pill ${(settings.pron || "koine") === "koine" ? "on" : ""}" data-p="koine">Koine (1st c.)</button>
+        <button class="pill ${(settings.pron || "polis") === "polis" ? "on" : ""}" data-p="polis">Polis Koine</button>
+        <button class="pill ${settings.pron === "koine" ? "on" : ""}" data-p="koine">Koine (Buth)</button>
         <button class="pill ${settings.pron === "erasmian" ? "on" : ""}" data-p="erasmian">Erasmian</button>
         <button class="pill ${settings.pron === "modern" ? "on" : ""}" data-p="modern">Modern Greek</button>
       </div>
@@ -1637,12 +1647,13 @@ function renderSettings() {
   const voiceNote = view.querySelector("#voice-note");
   const sampleEl = view.querySelector("#pron-sample");
   const ABOUT = {
-    koine: "Reconstructed first-century pronunciation \u2014 how the New Testament most likely sounded. β says v and δ says th (as in \"the\"), so διακονία is \"thee-ah-ko-NEE-ah\" even though our DEACON keeps the older d. αι sounds like ε, and ει like ι.",
+    polis: "Polis Institute living Koine: ω is a long o (distinct from short ο), υ sounds like \u201coo\u201d, and diphthongs are real vowel glides \u2014 αι is \u201cah-ee\u201d, ει is \u201ceh-ee\u201d, αυ is \u201cah-oo\u201d, etc.",
+    koine: "Reconstructed first-century pronunciation after Randall Buth \u2014 β says v, δ says th (as in \u201cthe\u201d), αι has collapsed to ε, and ει to ι.",
     erasmian: "The classroom convention used in most seminaries. Not historical, but it keeps every letter distinct, which helps with spelling.",
     modern: "Greek as spoken today. Uses a real Greek voice when your device has one installed."
   };
   const describe = () => {
-    view.querySelector("#pron-about").textContent = ABOUT[settings.pron || "koine"];
+    view.querySelector("#pron-about").textContent = ABOUT[settings.pron || "polis"];
     if (!speechReady()) {
       voiceNote.textContent = "This browser has no speech support, so the speaker buttons are hidden.";
       sampleEl.textContent = "\u2014";
