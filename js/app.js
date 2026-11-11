@@ -42,7 +42,7 @@ const DEFAULT_SETTINGS = {
   tiers: { memorize: true, recognize: true },
   enabledSets: {},           // setId -> bool (default true)
   setChapter: {},            // setId -> chapter number, overriding the built-in one
-  chapter: null,             // null = every chapter; a number = that one
+  chapter: null,             // null = every chapter; a number = that one; "final" = final review
   chapterMode: "only",       // "only" = just that chapter; "upto" = it and everything before
   quizSize: 10,
   pron: "koine"              // koine | erasmian | modern
@@ -668,6 +668,20 @@ function setLabel(set) {
 const CURRENT_CHAPTER = 8;
 function newestChapter() { return chapters().includes(CURRENT_CHAPTER) ? CURRENT_CHAPTER : null; }
 
+// Final review: every chapter, but the ones taught since the midterm come up
+// about twice as often. Chapter 12 was covered before the midterm.
+const MIDTERM_CHAPTERS = [1, 2, 3, 4, 5, 12];
+const POST_MIDTERM_WEIGHT = 2;
+function isFinal() { return settings.chapter === "final"; }
+function chapterWeight(c) { return c == null || MIDTERM_CHAPTERS.includes(c) ? 1 : POST_MIDTERM_WEIGHT; }
+// Shuffle that, in final review, puts post-midterm words ahead more often
+// (weighted random order). Anywhere else it is a plain shuffle.
+function studyOrder(words) {
+  if (!isFinal()) return shuffle(words);
+  return words.map(w => ({ w, k: Math.pow(Math.random(), 1 / chapterWeight(w.chapter)) }))
+    .sort((a, b) => b.k - a.k).map(x => x.w);
+}
+
 function setChapterFilter(v) {
   settings.chapter = v;
   saveSettings();
@@ -677,19 +691,22 @@ function chapterMarkup() {
   const cur = settings.chapter ?? null, newest = newestChapter();
   const pill = (v, label) =>
     `<button class="pill ${v === cur ? "on" : ""}" data-ch="${v === null ? "all" : v}">${label}</button>`;
+  const post = chapters().filter(c => chapterWeight(c) > 1);
   const mode = settings.chapterMode === "upto" ? "upto" : "only";
-  const scope = cur == null ? "" : `<div class="pill-row scope-row" id="ch-scope">
+  const scope = cur == null || cur === "final" ? "" : `<div class="pill-row scope-row" id="ch-scope">
       <button class="pill ${mode === "only" ? "on" : ""}" data-scope="only">Chapter ${cur} only</button>
       <button class="pill ${mode === "upto" ? "on" : ""}" data-scope="upto">Everything up to ${cur}</button>
     </div>`;
   return `<div class="pill-row" id="chapters">
       ${pill(null, "All chapters")}
+      ${post.length ? pill("final", "Final review") : ""}
       ${chapters().map(c => pill(c, `Chapter ${c}${c === newest ? " \u00b7 new" : ""}`)).join("")}
     </div>${scope}`;
 }
 function mountChapters(after) {
   view.querySelectorAll("#chapters .pill").forEach(b => b.onclick = () => {
-    setChapterFilter(b.dataset.ch === "all" ? null : Number(b.dataset.ch));
+    const ch = b.dataset.ch;
+    setChapterFilter(ch === "all" ? null : ch === "final" ? "final" : Number(ch));
     after();
   });
   view.querySelectorAll("#ch-scope .pill").forEach(b => b.onclick = () => {
@@ -711,7 +728,7 @@ function activeWords() {
   const out = [];
   for (const set of allSets()) {
     if (settings.enabledSets[set.id] === false) continue;
-    if (settings.chapter != null) {
+    if (settings.chapter != null && !isFinal()) {
       const c = chapterOf(set);
       // "upto" is for refreshing everything learned so far, not just the new lesson.
       if (c == null) continue;
@@ -719,7 +736,7 @@ function activeWords() {
     }
     for (const w of set.words) {
       if (!settings.tiers[w.tier ?? "memorize"]) continue;
-      out.push({ ...w, setId: set.id, setTitle: set.title, id: wordId(set.id, w) });
+      out.push({ ...w, setId: set.id, setTitle: set.title, id: wordId(set.id, w), chapter: chapterOf(set) });
     }
   }
   return out;
@@ -842,6 +859,8 @@ function renderHome() {
       ${chapterMarkup()}
       <p class="muted">${settings.chapter == null
         ? `Every chapter is in the deck \u2014 ${words.length} words.`
+        : isFinal()
+          ? `Every chapter, ${words.length} words. Chapters ${chapters().filter(c => chapterWeight(c) > 1).join(", ")} (since the midterm) come up about twice as often.`
         : settings.chapterMode === "upto"
           ? `Chapters up to ${settings.chapter} \u2014 ${words.length} words.`
           : `Chapter ${settings.chapter} only \u2014 ${words.length} words.`}</p>
@@ -905,7 +924,7 @@ let session = null;
 
 function buildSession() {
   const due = shuffle(dueWords());
-  const fresh = shuffle(newWords()).slice(0, 10);
+  const fresh = studyOrder(newWords()).slice(0, 10);
   return { queue: [...due, ...fresh], done: 0, total: due.length + fresh.length };
 }
 
@@ -917,7 +936,7 @@ function renderReview() {
       <p class="muted">Come back later, or drill with Flashcards / Quiz any time.</p>
       <button class="btn secondary" id="again">Study new words anyway</button></div>`;
     view.querySelector("#again").onclick = () => {
-      session = { queue: shuffle(activeWords()).slice(0, 15), done: 0, total: 15 };
+      session = { queue: studyOrder(activeWords()).slice(0, 15), done: 0, total: 15 };
       renderReview();
     };
     return;
@@ -995,7 +1014,7 @@ function renderReview() {
 let deck = null, deckPos = 0;
 
 function renderFlash() {
-  if (!deck) { deck = shuffle(activeWords()); deckPos = 0; }
+  if (!deck) { deck = studyOrder(activeWords()); deckPos = 0; }
   if (deck.length === 0) {
     view.innerHTML = `<div class="card-panel"><p class="muted">No words match your filters — check Settings.</p></div>`;
     return;
@@ -1027,7 +1046,7 @@ function renderFlash() {
   };
   view.querySelector("#next").onclick = () => { deckPos++; renderFlash(); };
   view.querySelector("#prev").onclick = () => { deckPos = (deckPos - 1 + deck.length) % deck.length; renderFlash(); };
-  view.querySelector("#shuf").onclick = () => { deck = shuffle(deck); deckPos = 0; renderFlash(); };
+  view.querySelector("#shuf").onclick = () => { deck = studyOrder(deck); deckPos = 0; renderFlash(); };
 }
 
 // ---------------- QUIZ ----------------
@@ -1055,7 +1074,7 @@ function renderQuiz() {
     });
     view.querySelector("#start").onclick = () => {
       settings.quizSize = +view.querySelector("#qsize").value; saveSettings();
-      const pool = shuffle(activeWords());
+      const pool = studyOrder(activeWords());
       quiz = { type: qt, items: pool.slice(0, settings.quizSize), pos: 0, right: 0, pool };
       renderQuiz();
     };
@@ -1149,7 +1168,7 @@ function renderQuiz() {
 // Each chapter's words strung into sentences, so they are met in context.
 function sentencesFor() {
   const sets = (typeof SENTENCE_SETS === "undefined" ? [] : SENTENCE_SETS)
-    .filter(s => settings.chapter == null || s.chapter === settings.chapter);
+    .filter(s => settings.chapter == null || isFinal() || s.chapter === settings.chapter);
   return sets;
 }
 
@@ -1710,7 +1729,7 @@ function renderSettings() {
     if (settings.chapter != null && settings.chapter === was) settings.chapter = n;
     // A set may have just left the chapter being studied, so drop the pool.
     session = null; deck = null; quiz = null;
-    if (settings.chapter != null && !chapters().includes(settings.chapter)) settings.chapter = null;
+    if (settings.chapter != null && !isFinal() && !chapters().includes(settings.chapter)) settings.chapter = null;
     saveSettings();
     renderSettings();
   });
