@@ -665,7 +665,7 @@ function setLabel(set) {
   return c == null ? name : `Chapter ${c} \u2014 ${name}`;
 }
 // The chapter being worked on now, which isn't always the highest number added.
-const CURRENT_CHAPTER = 8;
+const CURRENT_CHAPTER = 9;
 function newestChapter() { return chapters().includes(CURRENT_CHAPTER) ? CURRENT_CHAPTER : null; }
 
 // Final review: every chapter, but the ones taught since the midterm come up
@@ -725,6 +725,10 @@ function wordId(setId, w) {
 }
 
 function activeWords() {
+  // A chapter that no longer exists (e.g. renumbered) falls back to all chapters.
+  if (typeof settings.chapter === "number" && !chapters().includes(settings.chapter)) {
+    settings.chapter = null; saveSettings();
+  }
   const out = [];
   for (const set of allSets()) {
     if (settings.enabledSets[set.id] === false) continue;

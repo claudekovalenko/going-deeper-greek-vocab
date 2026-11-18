@@ -415,10 +415,10 @@ const VOCAB_SETS = [
     ]
   },
   {
-    id: "gd-set-08",
+    id: "gd-set-08",          // id kept so saved progress and hints carry over
     source: "Going Deeper with New Testament Greek",
-    chapter: 8,
-    title: "Chapter 8 — Vocabulary",
+    chapter: 9,
+    title: "Chapter 9 — Vocabulary",
     words: [
       // ---- Vocabulary to Memorize ----
       { g: "ἀδελφή, ἡ", gloss: "sister", freq: 26, tier: "memorize", icon: "👭", mn: "ah-thehl-FAY ≈ \"a-THEL-FAY.\" The feminine of ἀδελφός, brother — the sibling love of PHILADELPHIA: SISTER." },
@@ -623,7 +623,7 @@ const SENTENCE_SETS = [
     { g: "χιλιάδες φαίνονται, καὶ ἕκαστος τὸ μέρος αὐτοῦ λαμβάνει ἐν σκεύει.", e: "Thousands appear, and each takes his share in a jar.", uses: ["χιλιάς", "φαίνω", "μέρος", "σκεῦος"] },
     { g: "ὁ θεὸς χαρίζεται ἡμῖν καὶ τελειοῖ ἡμᾶς, καὶ θεώμεθα αὐτόν.", e: "God gives to us freely and makes us perfect, and we behold him.", uses: ["χαρίζομαι", "τελειόω", "θεάομαι"] },
   ] },
-  { chapter: 8, items: [
+  { chapter: 9, items: [
     { g: "ἡ ἀδελφὴ κλαίει ἐν τῇ κώμῃ, ὅτι Λάζαρος κοιμᾶται ἐν τῷ μνημείῳ.", e: "The sister weeps in the village, because Lazarus has fallen asleep in the tomb.", uses: ["ἀδελφή", "κλαίω", "κώμη", "Λάζαρος", "κοιμάω", "μνημεῖον"] },
     { g: "οὔπω εἰσπορεύεται· πάντοτε δὲ εὐχαριστεῖ καὶ ἐπαίρει τοὺς ὀφθαλμοὺς ἐπάνω.", e: "He does not yet go in; but he always gives thanks and lifts his eyes above.", uses: ["οὔπω", "εἰσπορεύομαι", "πάντοτε", "εὐχαριστέω", "ἐπαίρω", "ἐπάνω"] },
     { g: "ἀληθῶς φιλεῖ αὐτόν· ταράσσει γὰρ ἑαυτόν.", e: "Truly he loves him, for he troubles himself.", uses: ["ἀληθῶς", "φιλέω", "ταράσσω"] },
